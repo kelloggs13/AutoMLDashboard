@@ -10,6 +10,9 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.preprocessing import OrdinalEncoder
+from sklearn.compose import ColumnTransformer
+
 
 st.set_page_config(layout = "wide")
 
@@ -32,19 +35,34 @@ if input_data is not None:
 with st.sidebar:
   select_target = st.selectbox('choose target', df_input.columns)
 
-# Add the target label
+# show un-processed data
+st.write(df_input.head(3))
+
+# Add the target label and pop target-column 
 df_input["target"] = df_input[select_target]
 df_input.drop(select_target, axis = 1, inplace = True)
 first_column = df_input.pop('target')
 df_input.insert(0, 'target', first_column)
-st.write(df_input.head(3))
 
-# Split data into features and label 
-X = df_input.drop("target", axis=1).copy()
-y = df_input["target"].copy() 
 
 # Split data into train and test
+X = df_input.drop("target", axis=1).copy()
+y = df_input["target"].copy() 
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
+
+# encode all remaining character variables
+vars_categorical = X.select_dtypes(include="O").columns.to_list()
+vars_remainder = X_train.select_dtypes(exclude="O").columns.to_list()
+ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)],remainder="passthrough",)
+ct.fit(X_train)
+X_train = ct.transform(X_train)
+X_test = ct.transform(X_test)
+X_train = pd.DataFrame(X_train, columns=vars_categorical+vars_remainder)
+X_test = pd.DataFrame(X_test, columns=vars_categorical+vars_remainder)
+
+# show processed data
+st.write(X_train.head(3))
+st.write(y_train.head(3))
 
 
 # DataViz with pygwalker
@@ -110,3 +128,7 @@ model_preds = {
 
 for model, preds in model_preds.items():
     st.write(f"{model} Results:\n{classification_report(y_test, preds)}")
+
+
+
+          
