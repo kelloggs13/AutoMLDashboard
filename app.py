@@ -6,13 +6,13 @@ from sklearn.model_selection import train_test_split
 import streamlit.components.v1 as components
 import pygwalker as pyg
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.compose import ColumnTransformer
-
+from plotnine import *
+import altair as alt
 
 st.set_page_config(layout = "wide")
 
@@ -82,52 +82,47 @@ def fit_eval_model(model):
   mod = model
   mod.fit(X_train, y_train)
   importance = mod.feature_importances_
-  for i,v in enumerate(importance):
-    st.write('Feature: %0d, Score: %.5f' % (i,v))
-    
-st.write("dectree")
-fit_eval_model(DecisionTreeClassifier())
-st.write("randFor")
-fit_eval_model(RandomForestClassifier())
-st.write("other stuff")
+  # for i,v in enumerate(importance):
+  #  st.write('Feature: %0d, Score: %.5f' % (i,v))
+  feat_importances = pd.Series(importance, index=X_test.columns).sort_values(ascending = False)
+  preds = mod.predict(X_test)
+  eval = classification_report(y_test, preds)
+  return mod, feat_importances, eval, preds
 
-# Instnatiating the models 
-svm = SVC()
-tree = DecisionTreeClassifier()
-randomforest = RandomForestClassifier()
-gradientboosting = GradientBoostingClassifier()
+fm_dectree = fit_eval_model(DecisionTreeClassifier())
+fm_rforest = fit_eval_model(RandomForestClassifier())
+fm_gradboost = fit_eval_model(GradientBoostingClassifier())
 
-# Training the models 
-svm.fit(X_train, y_train)
-tree.fit(X_train, y_train)
-randomforest.fit(X_train, y_train)
-gradientboosting.fit(X_train, y_train)
+for x in [fm_dectree, fm_rforest, fm_gradboost]:
+  xx = pd.DataFrame(x[1])
+  st.write(xx)
+  xx["feature"] = xx.index
+  st.write(x[0])
+  xx["model"] = x[0]
+  xx.columns = ["feature_importance", "feature", "model"]
+  st.write(alt.Chart(xx).mark_bar().encode(
+    x=alt.X('feature', sort=None),
+    y='feature_importance',
+))
+  
 
-# get feature importances
-# get importance
-importance = gradientboosting.feature_importances_
-# summarize feature importance
-for i,v in enumerate(importance):
- st.write('Feature: %0d, Score: %.5f' % (i,v))
 
 # Making predictions with each model
-svm_preds = svm.predict(X_test)
-tree_preds = tree.predict(X_test)
-randomforest_preds = randomforest.predict(X_test)
-gradientboosting_preds = gradientboosting.predict(X_test)
+# tree_preds = tree.predict(X_test)
+# randomforest_preds = randomforest.predict(X_test)
+# gradientboosting_preds = gradientboosting.predict(X_test)
 
 # Store model predictions in a dictionary
 # this makes it's easier to iterate through each model
 # and print the results. 
-model_preds = {
-    "Support Vector Machine": svm_preds,
-    "Decision Tree": tree_preds,
-    "Random Forest": randomforest_preds,
-    "Gradient Booksting": gradientboosting_preds
-}
+#model_preds = {
+#    "Decision Tree": tree_preds,
+#    "Random Forest": randomforest_preds,
+#    "Gradient Booksting": gradientboosting_preds
+#}
 
-for model, preds in model_preds.items():
-    st.write(f"{model} Results:\n{classification_report(y_test, preds)}")
+#for model, preds in model_preds.items():
+#    st.write(f"{model} Results:\n{classification_report(y_test, preds)}")
 
 
 
