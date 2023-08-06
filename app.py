@@ -5,7 +5,9 @@
 # - blog article (utility, learnigns, comparision with kaggle-daatsets and -scores, test-datasets)
 # - sidebar. gude user by numbered steps
 # - targets in upload file shoudl be 1(pos case) or 0 fpr neg case
-# - confusion matrix
+# - confusion matrix 
+#   -> add explanation of 0, 1 --> mabye to at beginning anywayxss? 
+#   -> readability!!!
 # - foramt change in eval-kpi as percent
 
 import os
@@ -16,7 +18,7 @@ import streamlit.components.v1 as components
 import pygwalker as pyg
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.preprocessing import OrdinalEncoder, TargetEncoder
 from sklearn.compose import ColumnTransformer
@@ -132,7 +134,8 @@ if input_data is not None:
         'F1':[f1_train, f1_test, (f1_test/f1_train)-1],
         'AUC':[auc_train, auc_test, (auc_test/auc_train)-1]
       })
-      return mod_str, df_eval, importance, y_test_pred
+      conf_matrix = confusion_matrix(y_test, y_test_pred)
+      return mod_str, df_eval, importance, conf_matrix, y_test_pred
      
     col_l, col_m, col_r = st.columns([1, 1, 1])
     
@@ -141,16 +144,19 @@ if input_data is not None:
       st.write(fm_dectree[0])
       st.dataframe(fm_dectree[1], hide_index = True)
       st.dataframe(fm_dectree[2], hide_index = True)
+      st.write(fm_dectree[3])
     with col_m:
       fm_gradboost = fit_eval_model(GradientBoostingClassifier())
       st.write(fm_gradboost[0])
       st.dataframe(fm_gradboost[1], hide_index = True)
       st.dataframe(fm_gradboost[2], hide_index = True)
+      st.write(fm_gradboost[3])
     with col_r:
       fm_rforest = fit_eval_model(RandomForestClassifier())
       st.write(fm_rforest[0])
       st.dataframe(fm_rforest[1], hide_index = True)
       st.dataframe(fm_rforest[2], hide_index = True)
+      st.write(fm_rforest[3])
       
     with st.sidebar:
         st.button('sd')
