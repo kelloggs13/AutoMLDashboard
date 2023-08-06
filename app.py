@@ -1,3 +1,10 @@
+# future topics
+# - onehotencoding
+# - readme (intro?) page
+# -- how to use, prerequisites, limitations, outlook
+# - blog article (utility, learnigns, comparision with kaggle-daatsets and -scores, test-datasets)
+# - sidebar. gude user by numbered steps
+# - targets in upload file shoudl be 1(pos case) or 0 fpr neg case
 
 import os
 import streamlit as st
@@ -13,12 +20,13 @@ from sklearn.preprocessing import OrdinalEncoder
 from sklearn.compose import ColumnTransformer
 from plotnine import *
 import altair as alt
+from sklearn import metrics
+import numpy as np
 
 st.set_page_config(layout = "wide")
 
 with st.sidebar:
-  input_data = st.file_uploader('uplod data')
-  input_filename, input_file_extension = os.path.splitext(input_data.name)
+  input_data = st.file_uploader('upload data')
 
 def read_data():
   if input_file_extension == ".csv":
@@ -30,103 +38,126 @@ def read_data():
   return df
 
 if input_data is not None:
+  input_filename, input_file_extension = os.path.splitext(input_data.name)
   df_input = read_data()
+    
+  # show un-processed data
+  st.header("Uploaded Data")
+  st.dataframe(df_input, hide_index = True)
   
-# show un-processed data
-st.header("Uploaded Data")
-st.write(df_input.head(3))
+  # DataViz with pygwalker
+  db_pyg = pyg.walk(df_input, return_html=True)
+  
+  with st.sidebar:
+    btn_show_pygwalker = st.checkbox("Explore Uploaded Data")
+    select_target = st.selectbox('Choose Target', df_input.columns)
+    select_pos_case = st.selectbox('Select positive Outcome', np.unique(df_input[select_target]))
+    btn_fit_models = st.checkbox("Start it up")
+  
+  placeholder = st.empty()
+  if btn_show_pygwalker:
+      with placeholder:
+        components.html(db_pyg, scrolling=True, height = 1000)
+  
+  if btn_fit_models:
+    # Add the target label and pop target-column 
+    df_input["target"] = df_input[select_target]
+    df_input.drop(select_target, axis = 1, inplace = True)
+    first_column = df_input.pop('target')
+    df_input.insert(0, 'target', first_column)
+    
+    # Split data into train and test
+    X = df_input.drop("target", axis=1).copy()
+    y = df_input["target"].copy() 
+    # encode target variable as binary
+    y = y.replace({" Approved": 1, " Rejected": 0})
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
+    
 
-# DataViz with pygwalker
-db_pyg = pyg.walk(df_input, return_html=True)
+    # encode all remaining character variables
+    vars_categorical = X.select_dtypes(include="O").columns.to_list()
+    vars_remainder = X_train.select_dtypes(exclude="O").columns.to_list()
+    ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)],remainder="passthrough",)
+    ct.fit(X_train)
+    X_train = ct.transform(X_train)
+    X_test = ct.transform(X_test)
+    X_train = pd.DataFrame(X_train, columns=vars_categorical+vars_remainder)
+    X_test = pd.DataFrame(X_test, columns=vars_categorical+vars_remainder)
+    
+    # show processed data
+    if False:
+      st.header("Data used for Model Fitting")
+      col_l, col_r = st.columns([1, 9])
+      with col_l:
+        st.dataframe(y_train.head(3))
+      with col_r:
+        st.dataframe(X_train.head(3))
+  
+    st.header("Fitted Models")
+    
+    def fit_eval_model(model):
+      mod = model
+      mod_str = str(mod)
+      mod.fit(X_train, y_train)
+      importance = mod.feature_importances_
+      importance = pd.Series(importance, index=X_train.columns).sort_values(ascending = False)
+      importance = pd.DataFrame(importance)
+      importance["feature"] = importance.index
+      importance["model"] = mod_str
+      importance.columns = ["feature_importance", "feature", "model"]
+      y_train_pred = mod.predict(X_train)
+      y_test_pred = mod.predict(X_test)
+      
+      acc_train = metrics.accuracy_score(y_train, y_train_pred)
+      f1_train =  metrics.f1_score(y_train, y_train_pred, average = "binary")
+      auc_train = metrics.roc_auc_score(y_train, y_train_pred, average = "macro")
 
-with st.sidebar:
-  btn_show_pygwalker = st.checkbox("Explore Uploaded Data")
-  select_target = st.selectbox('Choose Target', df_input.columns)
-  btn_fit_models = st.checkbox("Start it up")
+      acc_test = metrics.accuracy_score(y_test, y_test_pred)
+      f1_test =  metrics.f1_score(y_test, y_test_pred, average = "binary")
+      auc_test = metrics.roc_auc_score(y_test, y_test_pred, average = "macro")
+      df_eval = pd.DataFrame({
+        ' ':['Train','Test','Change'],
+        'Accuracy':[acc_train, acc_test, (acc_test/acc_train)-1],
+        'F1':[f1_train, f1_test, (f1_test/f1_train)-1],
+        'AUC':[auc_train, auc_test, (auc_test/auc_train)-1]
+      })
+      return mod_str, df_eval, importance, y_test_pred
+     
+    col_l, col_m, col_r = st.columns([1, 1, 1])
+    with col_l:
+      fm_dectree = fit_eval_model(DecisionTreeClassifier())
+      st.write(fm_dectree[0])
+      st.dataframe(fm_dectree[1], hide_index = True)
+      st.dataframe(fm_dectree[2], hide_index = True)
+    with col_m:
+      fm_gradboost = fit_eval_model(GradientBoostingClassifier())
+      st.write(fm_gradboost[0])
+      st.dataframe(fm_gradboost[1], hide_index = True)
+      st.dataframe(fm_gradboost[2], hide_index = True)
+    with col_r:
+      fm_rforest = fit_eval_model(RandomForestClassifier())
+      st.write(fm_gradboost[0])
+      st.dataframe(fm_gradboost[1], hide_index = True)
+      st.dataframe(fm_gradboost[2], hide_index = True)
 
-
-placeholder = st.empty()
-if btn_show_pygwalker:
-    with placeholder:
-      components.html(db_pyg, scrolling=True, height = 1000)
-
-
-if btn_fit_models:
-  # Add the target label and pop target-column 
-  df_input["target"] = df_input[select_target]
-  df_input.drop(select_target, axis = 1, inplace = True)
-  first_column = df_input.pop('target')
-  df_input.insert(0, 'target', first_column)
+  
+  # Making predictions with each model
+  # tree_preds = tree.predict(X_test)
+  # randomforest_preds = randomforest.predict(X_test)
+  # gradientboosting_preds = gradientboosting.predict(X_test)
+  
+  # Store model predictions in a dictionary
+  # this makes it's easier to iterate through each model
+  # and print the results. 
+  #model_preds = {
+  #    "Decision Tree": tree_preds,
+  #    "Random Forest": randomforest_preds,
+  #    "Gradient Booksting": gradientboosting_preds
+  #}
+  
+  #for model, preds in model_preds.items():
+  #    st.write(f"{model} Results:\n{classification_report(y_test, preds)}")
   
   
-  # Split data into train and test
-  X = df_input.drop("target", axis=1).copy()
-  y = df_input["target"].copy() 
-  X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
   
-  # encode all remaining character variables
-  vars_categorical = X.select_dtypes(include="O").columns.to_list()
-  vars_remainder = X_train.select_dtypes(exclude="O").columns.to_list()
-  ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)],remainder="passthrough",)
-  ct.fit(X_train)
-  X_train = ct.transform(X_train)
-  X_test = ct.transform(X_test)
-  X_train = pd.DataFrame(X_train, columns=vars_categorical+vars_remainder)
-  X_test = pd.DataFrame(X_test, columns=vars_categorical+vars_remainder)
-  
-  # show processed data
-  st.header("Processed Data")
-  col_l, col_r = st.columns([1, 9])
-  with col_l:
-    st.write(y_train.head(3))
-  with col_r:
-    st.write(X_train.head(3))
-
-  st.header("Results")
-  
-  def fit_eval_model(model):
-    mod = model
-    mod.fit(X_train, y_train)
-    importance = mod.feature_importances_
-    importance = pd.Series(importance, index=X_test.columns).sort_values(ascending = False)
-    importance = pd.DataFrame(importance)
-    importance["feature"] = importance.index
-    importance["model"] = mod
-    importance.columns = ["feature_importance", "feature", "model"]
-  
-    preds = mod.predict(X_test)
-    eval = classification_report(y_test, preds)
-    st.write(importance)
-    st.write(eval)
-    st.write(pd.DataFrame(preds).head())
-    return importance, eval, preds
-  
-  col_l, col_m, col_r = st.columns([1, 1, 1])
-  with col_l:
-    fm_dectree = fit_eval_model(DecisionTreeClassifier())
-  with col_m:
-    fm_gradboost = fit_eval_model(GradientBoostingClassifier())
-  with col_r:
-    fm_rforest = fit_eval_model(RandomForestClassifier())
-
-
-# Making predictions with each model
-# tree_preds = tree.predict(X_test)
-# randomforest_preds = randomforest.predict(X_test)
-# gradientboosting_preds = gradientboosting.predict(X_test)
-
-# Store model predictions in a dictionary
-# this makes it's easier to iterate through each model
-# and print the results. 
-#model_preds = {
-#    "Decision Tree": tree_preds,
-#    "Random Forest": randomforest_preds,
-#    "Gradient Booksting": gradientboosting_preds
-#}
-
-#for model, preds in model_preds.items():
-#    st.write(f"{model} Results:\n{classification_report(y_test, preds)}")
-
-
-
-          
+            
