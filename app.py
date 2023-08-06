@@ -159,23 +159,23 @@ with tab_fit:
         fm_dectree = fit_eval_model(DecisionTreeClassifier())
         st.write(fm_dectree[0])
         st.dataframe(fm_dectree[1], hide_index = True)
-        st.dataframe(fm_dectree[2], hide_index = True)
         st.write(fm_dectree[3])
+        st.dataframe(fm_dectree[2], hide_index = True)
         st.download_button("Download Model", data=pickle.dumps(fm_dectree[5]),file_name=f"{fm_dectree[0]}.pkl")
       with col_m:
         fm_gradboost = fit_eval_model(GradientBoostingClassifier())
         st.write(fm_gradboost[0])
         st.dataframe(fm_gradboost[1], hide_index = True)
-        st.dataframe(fm_gradboost[2], hide_index = True)
         st.write(fm_gradboost[3])
+        st.dataframe(fm_gradboost[2], hide_index = True)
         st.download_button("Download Model", data=pickle.dumps(fm_gradboost[5]),file_name=f"{fm_gradboost[0]}.pkl")
 
       with col_r:
         fm_rforest = fit_eval_model(RandomForestClassifier())
         st.write(fm_rforest[0])
         st.dataframe(fm_rforest[1], hide_index = True)
-        st.dataframe(fm_rforest[2], hide_index = True)
         st.write(fm_rforest[3])
+        st.dataframe(fm_rforest[2], hide_index = True)
         st.download_button("Download Model", data=pickle.dumps(fm_rforest[5]),file_name=f"{fm_rforest[0]}.pkl")
 
      
