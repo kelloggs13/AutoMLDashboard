@@ -31,12 +31,23 @@ def read_data():
 
 if input_data is not None:
   df_input = read_data()
+  
+# show un-processed data
+st.header("Uploaded Data")
+st.write(df_input.head(3))
+
+# DataViz with pygwalker
+db_pyg = pyg.walk(df_input, return_html=True)
 
 with st.sidebar:
+  btn_show_pygwalker = st.checkbox("Explore Uploaded Data")
   select_target = st.selectbox('choose target', df_input.columns)
 
-# show un-processed data
-st.write(df_input.head(3))
+placeholder = st.empty()
+if btn_show_pygwalker:
+    with placeholder:
+      components.html(db_pyg, scrolling=True, height = 1000)
+
 
 # Add the target label and pop target-column 
 df_input["target"] = df_input[select_target]
@@ -61,50 +72,36 @@ X_train = pd.DataFrame(X_train, columns=vars_categorical+vars_remainder)
 X_test = pd.DataFrame(X_test, columns=vars_categorical+vars_remainder)
 
 # show processed data
-st.write(X_train.head(3))
-st.write(y_train.head(3))
+st.header("Processed Data")
+col_l, col_r = st.columns([1, 9])
+with col_l:
+  st.write(y_train.head(3))
+with col_r:
+  st.write(X_train.head(3))
 
 
-# DataViz with pygwalker
-db_pyg = pyg.walk(df_input, return_html=True)
 
-btn_show_pygwalker = st.checkbox("Explore Data")
-
-placeholder = st.empty()
-if btn_show_pygwalker:
-    with placeholder:
-      components.html(db_pyg, scrolling=True, height = 1000)
-
-
-col_l, col_r = st.columns([1, 2])
 
 def fit_eval_model(model):
   mod = model
   mod.fit(X_train, y_train)
   importance = mod.feature_importances_
-  # for i,v in enumerate(importance):
-  #  st.write('Feature: %0d, Score: %.5f' % (i,v))
-  feat_importances = pd.Series(importance, index=X_test.columns).sort_values(ascending = False)
+  importance = pd.Series(importance, index=X_test.columns).sort_values(ascending = False)
+  importance = pd.DataFrame(importance)
+  importance["feature"] = importance.index
+  importance["model"] = mod
+  importance.columns = ["feature_importance", "feature", "model"]
+
   preds = mod.predict(X_test)
   eval = classification_report(y_test, preds)
-  return mod, feat_importances, eval, preds
+  st.write(importance)
+  st.write(eval)
+  st.write(pd.DataFrame(preds).head())
+  return importance, eval, preds
 
 fm_dectree = fit_eval_model(DecisionTreeClassifier())
-fm_rforest = fit_eval_model(RandomForestClassifier())
 fm_gradboost = fit_eval_model(GradientBoostingClassifier())
-
-for x in [fm_dectree, fm_rforest, fm_gradboost]:
-  xx = pd.DataFrame(x[1])
-  st.write(xx)
-  xx["feature"] = xx.index
-  st.write(x[0])
-  xx["model"] = x[0]
-  xx.columns = ["feature_importance", "feature", "model"]
-  st.write(alt.Chart(xx).mark_bar().encode(
-    x=alt.X('feature', sort=None),
-    y='feature_importance',
-))
-  
+fm_rforest = fit_eval_model(RandomForestClassifier())
 
 
 # Making predictions with each model
