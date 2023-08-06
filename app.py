@@ -1,10 +1,12 @@
 # future topics
 # - onehotencoding
 # - readme (intro?) page
-# -- how to use, prerequisites, limitations, outlook
+# -- how to use, prerequisites, limitations[comma separated, binary classification], outlook
 # - blog article (utility, learnigns, comparision with kaggle-daatsets and -scores, test-datasets)
 # - sidebar. gude user by numbered steps
 # - targets in upload file shoudl be 1(pos case) or 0 fpr neg case
+# - confusion matrix
+# - foramt change in eval-kpi as percent
 
 import os
 import streamlit as st
@@ -16,12 +18,13 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import OrdinalEncoder, TargetEncoder
 from sklearn.compose import ColumnTransformer
 from plotnine import *
 import altair as alt
 from sklearn import metrics
 import numpy as np
+from sklearn import preprocessing
 
 st.set_page_config(layout = "wide")
 
@@ -51,7 +54,12 @@ if input_data is not None:
   with st.sidebar:
     btn_show_pygwalker = st.checkbox("Explore Uploaded Data")
     select_target = st.selectbox('Choose Target', df_input.columns)
-    select_pos_case = st.selectbox('Select positive Outcome', np.unique(df_input[select_target]))
+    target_unique = np.unique(df_input[select_target])
+    #select_pos_case = st.selectbox('Select positive Outcome', target_unique)
+   # select_neg_case = np.array2string(target_unique[target_unique != select_pos_case])
+   # st.write(select_pos_case)
+    #st.write(select_neg_case)
+
     btn_fit_models = st.checkbox("Start it up")
   
   placeholder = st.empty()
@@ -69,8 +77,12 @@ if input_data is not None:
     # Split data into train and test
     X = df_input.drop("target", axis=1).copy()
     y = df_input["target"].copy() 
-    # encode target variable as binary
-    y = y.replace({" Approved": 1, " Rejected": 0})
+   # st.write(y)
+    lb = preprocessing.LabelBinarizer()
+    y = lb.fit_transform(y)
+  #  st.write(y)
+
+#    y = y.replace({select_pos_case: 1, select_neg_case: 0}) # sklearn.metric oftetimes requires numeric binary target
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
     
 
@@ -103,8 +115,7 @@ if input_data is not None:
       importance = pd.Series(importance, index=X_train.columns).sort_values(ascending = False)
       importance = pd.DataFrame(importance)
       importance["feature"] = importance.index
-      importance["model"] = mod_str
-      importance.columns = ["feature_importance", "feature", "model"]
+      importance.columns = ["feature_importance", "feature"]
       y_train_pred = mod.predict(X_train)
       y_test_pred = mod.predict(X_test)
       
@@ -124,6 +135,7 @@ if input_data is not None:
       return mod_str, df_eval, importance, y_test_pred
      
     col_l, col_m, col_r = st.columns([1, 1, 1])
+    
     with col_l:
       fm_dectree = fit_eval_model(DecisionTreeClassifier())
       st.write(fm_dectree[0])
@@ -136,28 +148,9 @@ if input_data is not None:
       st.dataframe(fm_gradboost[2], hide_index = True)
     with col_r:
       fm_rforest = fit_eval_model(RandomForestClassifier())
-      st.write(fm_gradboost[0])
-      st.dataframe(fm_gradboost[1], hide_index = True)
-      st.dataframe(fm_gradboost[2], hide_index = True)
-
-  
-  # Making predictions with each model
-  # tree_preds = tree.predict(X_test)
-  # randomforest_preds = randomforest.predict(X_test)
-  # gradientboosting_preds = gradientboosting.predict(X_test)
-  
-  # Store model predictions in a dictionary
-  # this makes it's easier to iterate through each model
-  # and print the results. 
-  #model_preds = {
-  #    "Decision Tree": tree_preds,
-  #    "Random Forest": randomforest_preds,
-  #    "Gradient Booksting": gradientboosting_preds
-  #}
-  
-  #for model, preds in model_preds.items():
-  #    st.write(f"{model} Results:\n{classification_report(y_test, preds)}")
-  
-  
-  
-            
+      st.write(fm_rforest[0])
+      st.dataframe(fm_rforest[1], hide_index = True)
+      st.dataframe(fm_rforest[2], hide_index = True)
+      
+    with st.sidebar:
+        st.button('sd')
