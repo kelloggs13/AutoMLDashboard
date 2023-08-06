@@ -41,7 +41,9 @@ db_pyg = pyg.walk(df_input, return_html=True)
 
 with st.sidebar:
   btn_show_pygwalker = st.checkbox("Explore Uploaded Data")
-  select_target = st.selectbox('choose target', df_input.columns)
+  select_target = st.selectbox('Choose Target', df_input.columns)
+  btn_fit_models = st.checkbox("Start it up")
+
 
 placeholder = st.empty()
 if btn_show_pygwalker:
@@ -49,59 +51,63 @@ if btn_show_pygwalker:
       components.html(db_pyg, scrolling=True, height = 1000)
 
 
-# Add the target label and pop target-column 
-df_input["target"] = df_input[select_target]
-df_input.drop(select_target, axis = 1, inplace = True)
-first_column = df_input.pop('target')
-df_input.insert(0, 'target', first_column)
+if btn_fit_models:
+  # Add the target label and pop target-column 
+  df_input["target"] = df_input[select_target]
+  df_input.drop(select_target, axis = 1, inplace = True)
+  first_column = df_input.pop('target')
+  df_input.insert(0, 'target', first_column)
+  
+  
+  # Split data into train and test
+  X = df_input.drop("target", axis=1).copy()
+  y = df_input["target"].copy() 
+  X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
+  
+  # encode all remaining character variables
+  vars_categorical = X.select_dtypes(include="O").columns.to_list()
+  vars_remainder = X_train.select_dtypes(exclude="O").columns.to_list()
+  ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)],remainder="passthrough",)
+  ct.fit(X_train)
+  X_train = ct.transform(X_train)
+  X_test = ct.transform(X_test)
+  X_train = pd.DataFrame(X_train, columns=vars_categorical+vars_remainder)
+  X_test = pd.DataFrame(X_test, columns=vars_categorical+vars_remainder)
+  
+  # show processed data
+  st.header("Processed Data")
+  col_l, col_r = st.columns([1, 9])
+  with col_l:
+    st.write(y_train.head(3))
+  with col_r:
+    st.write(X_train.head(3))
 
-
-# Split data into train and test
-X = df_input.drop("target", axis=1).copy()
-y = df_input["target"].copy() 
-X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
-
-# encode all remaining character variables
-vars_categorical = X.select_dtypes(include="O").columns.to_list()
-vars_remainder = X_train.select_dtypes(exclude="O").columns.to_list()
-ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)],remainder="passthrough",)
-ct.fit(X_train)
-X_train = ct.transform(X_train)
-X_test = ct.transform(X_test)
-X_train = pd.DataFrame(X_train, columns=vars_categorical+vars_remainder)
-X_test = pd.DataFrame(X_test, columns=vars_categorical+vars_remainder)
-
-# show processed data
-st.header("Processed Data")
-col_l, col_r = st.columns([1, 9])
-with col_l:
-  st.write(y_train.head(3))
-with col_r:
-  st.write(X_train.head(3))
-
-
-
-
-def fit_eval_model(model):
-  mod = model
-  mod.fit(X_train, y_train)
-  importance = mod.feature_importances_
-  importance = pd.Series(importance, index=X_test.columns).sort_values(ascending = False)
-  importance = pd.DataFrame(importance)
-  importance["feature"] = importance.index
-  importance["model"] = mod
-  importance.columns = ["feature_importance", "feature", "model"]
-
-  preds = mod.predict(X_test)
-  eval = classification_report(y_test, preds)
-  st.write(importance)
-  st.write(eval)
-  st.write(pd.DataFrame(preds).head())
-  return importance, eval, preds
-
-fm_dectree = fit_eval_model(DecisionTreeClassifier())
-fm_gradboost = fit_eval_model(GradientBoostingClassifier())
-fm_rforest = fit_eval_model(RandomForestClassifier())
+  st.header("Results")
+  
+  def fit_eval_model(model):
+    mod = model
+    mod.fit(X_train, y_train)
+    importance = mod.feature_importances_
+    importance = pd.Series(importance, index=X_test.columns).sort_values(ascending = False)
+    importance = pd.DataFrame(importance)
+    importance["feature"] = importance.index
+    importance["model"] = mod
+    importance.columns = ["feature_importance", "feature", "model"]
+  
+    preds = mod.predict(X_test)
+    eval = classification_report(y_test, preds)
+    st.write(importance)
+    st.write(eval)
+    st.write(pd.DataFrame(preds).head())
+    return importance, eval, preds
+  
+  col_l, col_m, col_r = st.columns([1, 1, 1])
+  with col_l:
+    fm_dectree = fit_eval_model(DecisionTreeClassifier())
+  with col_m:
+    fm_gradboost = fit_eval_model(GradientBoostingClassifier())
+  with col_r:
+    fm_rforest = fit_eval_model(RandomForestClassifier())
 
 
 # Making predictions with each model
