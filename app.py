@@ -32,6 +32,7 @@ from sklearn import metrics
 import numpy as np
 from sklearn import preprocessing
 import pickle
+from datetime import datetime
 
 
 import streamlit as st
@@ -43,6 +44,8 @@ from sklearn.linear_model import LogisticRegression
 
 
 st.set_page_config(layout = "wide")
+
+st.sidebar.write(datetime.now())
 
 def read_data(file):
   input_filename, input_file_extension = os.path.splitext(file.name)
@@ -109,18 +112,19 @@ def fit_eval_model(model):
   return mod_str, df_eval, importance, conf_matrix, y_test_pred, mod
       
       
-      
-st.write("1. Upload Data File (CSV or XLSX)")
-input_data = st.file_uploader(' ')
+input_data = st.sidebar.file_uploader('Upload Data File (CSV or XLSX)')
 
 if input_data is not None:
   
   df_input = read_data(input_data)
   
-  st.write("2. Choose Target for Classification Model")
+  # show uploaded data
+  st.header("Uploaded Data")
+  st.dataframe(df_input, hide_index = True)
+
   column_select_target = df_input.columns.tolist()
   column_select_target = [None] + column_select_target
-  select_target = st.selectbox(' ', column_select_target)
+  select_target = st.sidebar.selectbox("Choose Target for Classification Model", column_select_target)
   
   if select_target is not None: # ---- PRE-PROCESSING ----
     
@@ -130,18 +134,16 @@ if input_data is not None:
     # Split data into train and test
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
     
-    # show uploaded data
-    st.header("Uploaded Data")
-    st.dataframe(df_input, hide_index = True)
     # show pre-processed data
     st.header("Pre-Processed Features")
     st.dataframe(X, hide_index = True)
     
-    st.write("3. Choose Fitting or Scoring")
-    select_mode = st.selectbox(' ', [None, "Fitting", "Scoring"])
+    select_mode = st.sidebar.selectbox('Choose Fitting or Scoring', [None, "Fitting", "Scoring"])
 
     if select_mode == "Fitting":
       
+      st.write("todo: 'fitting y on X1, X2, etc.'")
+
       st.header("Fitted Models")
        
       col_l, col_m, col_r = st.columns([1, 1, 1])
@@ -152,14 +154,14 @@ if input_data is not None:
         st.dataframe(fm_dectree[1], hide_index = True)
         st.write(fm_dectree[3])
         st.dataframe(fm_dectree[2], hide_index = True)
-        st.download_button("Download Model", data=pickle.dumps(fm_dectree[5]),file_name=f"{fm_dectree[0]}.pkl")
+        st.sidebar.download_button("Download DT Model", data=pickle.dumps(fm_dectree[5]),file_name=f"{fm_dectree[0]}.pkl")
       with col_m:
         fm_gradboost = fit_eval_model(GradientBoostingClassifier())
         st.write(fm_gradboost[0])
         st.dataframe(fm_gradboost[1], hide_index = True)
         st.write(fm_gradboost[3])
         st.dataframe(fm_gradboost[2], hide_index = True)
-        st.download_button("Download Model", data=pickle.dumps(fm_gradboost[5]),file_name=f"{fm_gradboost[0]}.pkl")
+        st.sidebar.download_button("Download GD Model", data=pickle.dumps(fm_gradboost[5]),file_name=f"{fm_gradboost[0]}.pkl")
     
       with col_r:
         fm_rforest = fit_eval_model(RandomForestClassifier())
@@ -167,12 +169,12 @@ if input_data is not None:
         st.dataframe(fm_rforest[1], hide_index = True)
         st.write(fm_rforest[3])
         st.dataframe(fm_rforest[2], hide_index = True)
-        st.download_button("Download Model", data=pickle.dumps(fm_rforest[5]),file_name=f"{fm_rforest[0]}.pkl")
+        st.sidebar.download_button("Download RF Model", data=pickle.dumps(fm_rforest[5]),file_name=f"{fm_rforest[0]}.pkl")
 
     if select_mode == "Scoring":
       
       # Upload the pickled model
-      model_file = st.file_uploader("Upload Pickled Model", type=["pkl"])
+      model_file = st.sidebar.file_uploader("Upload Pickled Model", type=["pkl"])
       
       if model_file is not None:
         
@@ -180,10 +182,6 @@ if input_data is not None:
         with model_file as f:
           model_scoring = pickle.load(f)
     
-        # Display uploaded input data
-        st.write("Uploaded Data for Scoring:")
-        st.write(df_input)
-      
         # Model scoring
         y_scored = model_scoring.predict(X)
     
@@ -194,5 +192,11 @@ if input_data is not None:
         st.write("Confusion Matrix:")
         st.write(pd.DataFrame(cm, columns=["Predicted 0", "Predicted 1"], index=["Actual 0", "Actual 1"]))
       
-
+        # download predictions
+        data_pred = df_input.copy()
+        data_pred['Predictions'] = y_scored
+        st.write(data_pred)
+        st.write("todo: target and orig.target need to be comparable")
+        st.write("fix download button")
+        st.sidebar.download_button("Download Scored Data", data=data_pred)
   
