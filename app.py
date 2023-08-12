@@ -33,97 +33,75 @@ import numpy as np
 from sklearn import preprocessing
 import pickle
 
+
+import streamlit as st
+import pandas as pd
+import pickle
+from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+
+
 st.set_page_config(layout = "wide")
 
-tab_fit, tab_score = st.tabs(["Find Model", "Score Data"])
+def read_data(file):
+  input_filename, input_file_extension = os.path.splitext(file.name)
+  if input_file_extension == ".csv":
+    df = pd.read_csv(input_data)
+  elif input_file_extension == ".xlsx":
+    df = pd.read_excel(input_data)
+  else:
+    st.warning("Uploaded file must be either .csv or .xlsx")
+  return df
 
-with tab_fit:
+st.write("1. Upload Data File (CSV or XLSX)")
+input_data = st.file_uploader(' ')
+
+if input_data is not None:
+  df_input = read_data(input_data)
   
-  param_col1, param_col2, param_col3 = st.columns([1, 1, 1])
+  st.write("2. Choose Target for Classification Model")
+  column_select_target = df_input.columns.tolist()
+  column_select_target = [None] + column_select_target
+  select_target = st.selectbox(' ', column_select_target)
   
-  with param_col1:
-    st.write("1. Upload Data File (CSV or XLSX)")
-    input_data = st.file_uploader(' ')
-  
-  def read_data():
-    if input_file_extension == ".csv":
-      df = pd.read_csv(input_data)
-    elif input_file_extension == ".xlsx":
-      df = pd.read_excel(input_data)
-    else:
-      st.warning("Uploaded file must be either .csv or .xlsx")
-    return df
-  
-  if input_data is not None:
-    input_filename, input_file_extension = os.path.splitext(input_data.name)
-    df_input = read_data()
-      
-    # DataViz with pygwalker
-    db_pyg = pyg.walk(df_input, return_html=True)
+  if select_target is not None: # ---- PRE-PROCESSING ----
     
-    st.write("---")
-#    components.html("""<hr style="height:10px;border:none;color:#333;background-color:#333;" /> """)
-      
-    # show un-processed data
+    # Add the target label and pop target-column 
+    df_input["target"] = df_input[select_target]
+    df_input.drop(select_target, axis = 1, inplace = True)
+    first_column = df_input.pop('target')
+    df_input.insert(0, 'target', first_column)
+    
+    X = df_input.drop("target", axis=1).copy()
+    y = df_input["target"].copy() 
+    lb = preprocessing.LabelBinarizer()
+    y = lb.fit_transform(y)
+    
+    # encode all remaining character variables
+    vars_categorical = X.select_dtypes(include="O").columns.to_list()
+    vars_remainder = X.select_dtypes(exclude="O").columns.to_list()
+    ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)],remainder="passthrough",)
+    ct.fit(X)
+    X = ct.transform(X)
+    X = pd.DataFrame(X, columns=vars_categorical+vars_remainder)
+    
+    # Split data into train and test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
+    
+    # show uploaded data
     st.header("Uploaded Data")
-    btn_show_pygwalker = st.checkbox("Explore Uploaded Data")
     st.dataframe(df_input, hide_index = True)
+    # show pre-processed data
+    st.header("Pre-Processed Features")
+    st.dataframe(X, hide_index = True)
     
-    with param_col2:
-      st.write("2. Choose Target for Classification Model")
-      select_target = st.selectbox(' ', df_input.columns)
-      target_unique = np.unique(df_input[select_target])
-    with param_col3:
-      st.write("3. Fit Models")
-      btn_fit_models = st_toggle_switch(label="Go!",
-                                  default_value=False,
-                                  label_after=True,
-                                  inactive_color="#D3D3D3",  # optional
-                                  active_color="#11567f",  # optional
-                                  track_color="#29B5E8",  # optional
-                              )
-     
-    placeholder = st.empty()
-    if btn_show_pygwalker:
-        with placeholder:
-          components.html(db_pyg, scrolling=True, height = 1000)
-    
-    if btn_fit_models:
-      
-      # Add the target label and pop target-column 
-      df_input["target"] = df_input[select_target]
-      df_input.drop(select_target, axis = 1, inplace = True)
-      first_column = df_input.pop('target')
-      df_input.insert(0, 'target', first_column)
-      
-      # Split data into train and test
-      X = df_input.drop("target", axis=1).copy()
-      y = df_input["target"].copy() 
-      lb = preprocessing.LabelBinarizer()
-      y = lb.fit_transform(y)
-      X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
-      
-      # encode all remaining character variables
-      vars_categorical = X.select_dtypes(include="O").columns.to_list()
-      vars_remainder = X_train.select_dtypes(exclude="O").columns.to_list()
-      ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)],remainder="passthrough",)
-      ct.fit(X_train)
-      X_train = ct.transform(X_train)
-      X_test = ct.transform(X_test)
-      X_train = pd.DataFrame(X_train, columns=vars_categorical+vars_remainder)
-      X_test = pd.DataFrame(X_test, columns=vars_categorical+vars_remainder)
-      
-      # show processed data
-      if False:
-        st.header("Data used for Model Fitting")
-        col_l, col_r = st.columns([1, 9])
-        with col_l:
-          st.dataframe(y_train.head(3))
-        with col_r:
-          st.dataframe(X_train.head(3))
-    
+    st.write("3. Choose Fitting or Scoring")
+    select_mode = st.selectbox(' ', [None, "Fitting", "Scoring"])
+
+    if select_mode == "Fitting":
       st.header("Fitted Models")
-      
+        
       def fit_eval_model(model):
         mod = model
         mod_str = str(mod)
@@ -139,7 +117,7 @@ with tab_fit:
         acc_train = metrics.accuracy_score(y_train, y_train_pred)
         f1_train =  metrics.f1_score(y_train, y_train_pred, average = "binary")
         auc_train = metrics.roc_auc_score(y_train, y_train_pred, average = "macro")
-  
+    
         acc_test = metrics.accuracy_score(y_test, y_test_pred)
         f1_test =  metrics.f1_score(y_test, y_test_pred, average = "binary")
         auc_test = metrics.roc_auc_score(y_test, y_test_pred, average = "macro")
@@ -169,7 +147,7 @@ with tab_fit:
         st.write(fm_gradboost[3])
         st.dataframe(fm_gradboost[2], hide_index = True)
         st.download_button("Download Model", data=pickle.dumps(fm_gradboost[5]),file_name=f"{fm_gradboost[0]}.pkl")
-
+    
       with col_r:
         fm_rforest = fit_eval_model(RandomForestClassifier())
         st.write(fm_rforest[0])
@@ -178,7 +156,49 @@ with tab_fit:
         st.dataframe(fm_rforest[2], hide_index = True)
         st.download_button("Download Model", data=pickle.dumps(fm_rforest[5]),file_name=f"{fm_rforest[0]}.pkl")
 
-     
-   
-with tab_score:
-  st.write("sd")
+    if select_mode == "Scoring":
+      # Streamlit app title
+      st.title("Model Scoring and Confusion Matrix")
+      
+      # Upload the pickled model
+      model_file = st.file_uploader("Upload Pickled Model", type=["pkl"])
+      
+      # Upload the input data (Excel or CSV)
+      input_data_file = st.file_uploader("Upload Input Data (Excel or CSV)", type=["csv", "xlsx"])
+      
+      if model_file and input_data_file:
+          try:
+              # Load the pickled model
+              with model_file as f:
+                  model = pickle.load(f)
+      
+              # Load the input data
+              input_data = pd.read_csv(input_data_file) if input_data_file.name.endswith(".csv") else pd.read_excel(input_data_file)
+      
+              # Display uploaded input data
+              st.write("Uploaded Input Data:")
+              st.write(input_data)
+      
+              # Select target variable
+              target_variable = st.selectbox("Select Target Variable", input_data.columns)
+      
+              # Split data into features and target
+              X = input_data.drop(target_variable, axis=1)
+              y = input_data[target_variable]
+      
+              # Train-test split for scoring
+              X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+      
+              # Model scoring
+              y_pred = model.predict(X_test)
+      
+              # Calculate confusion matrix
+              cm = confusion_matrix(y_test, y_pred)
+      
+              # Display confusion matrix
+              st.write("Confusion Matrix:")
+              st.write(pd.DataFrame(cm, columns=["Predicted 0", "Predicted 1"], index=["Actual 0", "Actual 1"]))
+      
+          except Exception as e:
+              st.error("An error occurred: " + str(e))
+  
