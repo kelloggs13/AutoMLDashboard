@@ -10,19 +10,9 @@ def read_data(file):
   return df
 
 def preprocess_data(df):
-  # Add the target label and pop target-column 
-  df["target"] = df[select_target]
-  df.drop(select_target, axis = 1, inplace = True)
-  first_column = df.pop('target')
-  df.insert(0, 'target', first_column)
-
   # split X, y   
   X = df.drop("target", axis=1).copy()
   y = df["target"].copy() 
-  
-  # make target numeric binary  
-  lb = preprocessing.LabelBinarizer()
-  y = lb.fit_transform(y)
   
   # encode  character model features
   vars_categorical = X.select_dtypes(include="O").columns.to_list()
