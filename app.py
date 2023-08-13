@@ -22,7 +22,7 @@ import streamlit.components.v1 as components
 import pygwalker as pyg
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
 from sklearn.preprocessing import OrdinalEncoder, TargetEncoder
 from sklearn.compose import ColumnTransformer
 from plotnine import *
@@ -103,18 +103,29 @@ if input_data is not None:
       
       with tab_fitting_fit:
       
-        fm = fit_eval_model_classif(RandomForestClassifier())
+        def get_kpi_model(fun_model):
+          fm = fit_eval_model_classif(fun_model)
+    
+          st.write("todo: 'fitting y on X1, X2, etc.'")
+          st.subheader("Fitted Models")
   
-        st.write("todo: 'fitting y on X1, X2, etc.'")
-        st.subheader("Fitted Models")
-
-        st.write(fm[0])
-        st.dataframe(fm[1], hide_index = True)
-        st.write(fm[3])
-        st.dataframe(fm[2], hide_index = True)
-        st.sidebar.download_button("Download Model", data=pickle.dumps(fm[5]),file_name=f"{fm[0]}.pkl")
+          st.write(fm[0])
+          st.dataframe(fm[1], hide_index = True)
+          st.write(fm[3])
+          st.dataframe(fm[2], hide_index = True)
+  
+        col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
         
-        st.sidebar.button("Reset", on_click = st.experimental_rerun)
+        with col_fm_1:
+          get_kpi_model(RandomForestClassifier())
+        with col_fm_2:
+          get_kpi_model(GradientBoostingClassifier())
+        with col_fm_3:
+          get_kpi_model(AdaBoostClassifier())
+        
+        
+        # st.sidebar.download_button("Download Model", data=pickle.dumps(fm[5]),file_name=f"{fm[0]}.pkl")
+        #st.sidebar.button("Reset", on_click = st.experimental_rerun)
     
       if 1 == 2: # "Scoring"
         
