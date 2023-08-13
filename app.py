@@ -38,68 +38,68 @@ exec(open('functions.py').read())
 
 st.set_page_config(layout = "wide")
 
-st.sidebar.write(datetime.now())
+st.sidebar.subheader("Inputs")
 
-input_data = st.sidebar.file_uploader('Upload Data File (CSV or XLSX)')
+form_input = st.sidebar.form("inputs")
+input_data = form_input.file_uploader('Upload Data File (CSV or XLSX)')
+inputs_submitted = form_input.form_submit_button("Go!")
+
+st.sidebar.write(datetime.now())
 
 if input_data is not None:
   
   df_input = read_data(input_data)
-  
-  # show uploaded data
-  st.header("Uploaded Data")
-  st.dataframe(df_input, hide_index = True)
 
   column_select_target = df_input.columns.tolist()
-  #column_select_target = [None] + column_select_target
+  select_target = form_input.selectbox("Choose Target for Classification Model", column_select_target)
+  
+  # show uploaded data
+  st.subheader("Uploaded Data")
+  show_all_data_uploaded = st.checkbox("Show all data", key = "alldata_uploaded")
+  if show_all_data_uploaded:
+    st.dataframe(df_input, hide_index = True)
+  if not show_all_data_uploaded:
+    st.dataframe(df_input.head(3), hide_index = True)
 
-  select_target = st.sidebar.selectbox("Choose Target for Classification Model", column_select_target)
-  if select_target is not None:
+  if inputs_submitted:
     df_input["target"] = df_input[select_target]
     df_input.drop(select_target, axis = 1, inplace = True)
     first_column = df_input.pop('target')
     df_input.insert(0, 'target', first_column)
+    st.subheader("Counts of Target")
     st.write(df_input.target.value_counts())
 
-  select_mode = st.sidebar.selectbox('Choose Fitting or Scoring', ["Fitting", "Scoring"])
-
-  if select_mode is not None:
-    select_modeltype = st.sidebar.selectbox('Regression or Classification?', [" ", "Regression", "Classification"])
-
-  if select_mode == "Scoring" or (select_mode == "Fitting" and select_modeltype is not None): # ---- PRE-PROCESSING ----
-
     # pre-process
-    X, y = preprocess_data(df_input)
+    X, y = preprocess_data_classif(df_input)
     
     # Split data into train and test
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
     
     # show pre-processed data
-    st.header("Pre-Processed Features")
-    st.dataframe(X, hide_index = True)
+    st.subheader("Pre-Processed Features")
+    show_all_data_preproc = st.checkbox("Show all data", key = "alldata_preproc")
+    if show_all_data_preproc:
+      st.dataframe(X, hide_index = True)
+    if not show_all_data_preproc:
+      st.dataframe(X.head(3), hide_index = True)
+
+    st.write("todo: 'fitting y on X1, X2, etc.'")
+
+    st.subheader("Fitted Models")
     
-    if select_mode is not None and select_modeltype is not None:
-      
-      st.write("todo: 'fitting y on X1, X2, etc.'")
+    lb = preprocessing.LabelBinarizer()
+    y = lb.fit_transform(y)
+    fm = fit_eval_model_classif(RandomForestClassifier())
+    
+    st.write(fm[0])
+    st.dataframe(fm[1], hide_index = True)
+    st.write(fm[3])
+    st.dataframe(fm[2], hide_index = True)
+    st.sidebar.download_button("Download Model", data=pickle.dumps(fm[5]),file_name=f"{fm[0]}.pkl")
+    
+    st.sidebar.button("Reset", on_click = st.experimental_rerun)
 
-      st.header("Fitted Models")
-      
-      if select_modeltype == "Regression":
-        fm = fit_eval_model(RandomForestRegressor())
-      if select_modeltype == "Classification":
-        lb = preprocessing.LabelBinarizer()
-        y = lb.fit_transform(y)
-        fm = fit_eval_model(RandomForestClassifier())
-      
-      st.write("sd")
-      
-      st.write(fm[0])
-      st.dataframe(fm[1], hide_index = True)
-      st.write(fm[3])
-      st.dataframe(fm[2], hide_index = True)
-      st.sidebar.download_button("Download Model", data=pickle.dumps(fm[5]),file_name=f"{fm[0]}.pkl")
-
-    if select_mode == "Scoring":
+    if 1 == 2: # "Scoring"
       
       # Upload the pickled model
       model_file = st.sidebar.file_uploader("Upload Pickled Model", type=["pkl"])

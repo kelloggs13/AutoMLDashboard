@@ -9,7 +9,7 @@ def read_data(file):
     st.warning("Uploaded file must be either .csv or .xlsx")
   return df
 
-def preprocess_data(df):
+def preprocess_data_classif(df):
   # split X, y   
   X = df.drop("target", axis=1).copy()
   y = df["target"].copy() 
@@ -24,7 +24,7 @@ def preprocess_data(df):
   
   return X, y
 
-def fit_eval_model(model):
+def fit_eval_model_classif(model):
   mod = model
   mod_str = str(mod)
   mod.fit(X_train, y_train)
