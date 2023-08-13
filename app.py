@@ -32,7 +32,8 @@ import numpy as np
 from sklearn import preprocessing
 import pickle
 from datetime import datetime
-
+import scikitplot as skplt # https://scikit-plot.readthedocs.io/en/stable/metrics.html
+# https://drive.google.com/file/d/1ZJ9TEdOnK1SQdyGY0ClCRkbw9WJjvML4/view?pli=1
 
 exec(open('functions.py').read())
 
@@ -102,20 +103,11 @@ if input_data is not None:
       X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
       
       with tab_fitting_fit:
-      
-        def get_kpi_model(fun_model):
-          fm = fit_eval_model_classif(fun_model)
-    
-          st.write("todo: 'fitting y on X1, X2, etc.'")
-          st.subheader("Fitted Models")
-  
-          st.write(fm[0])
-          st.dataframe(fm[1], hide_index = True)
-          st.write(fm[3])
-          st.dataframe(fm[2], hide_index = True)
+        
+        st.header("Fitted Models")
   
         col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
-        
+          
         with col_fm_1:
           get_kpi_model(RandomForestClassifier())
         with col_fm_2:

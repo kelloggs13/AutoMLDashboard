@@ -55,3 +55,10 @@ def fit_eval_model_classif(model):
   conf_matrix = confusion_matrix(y_test, y_test_pred)
 
   return mod_str, df_eval, importance, conf_matrix, y_test_pred, mod
+
+def get_kpi_model(fun_model):
+  fm = fit_eval_model_classif(fun_model)
+  st.write(fm[0])
+  st.dataframe(fm[1], hide_index = True)
+  st.write(fm[3])
+  st.dataframe(fm[2], hide_index = True)
