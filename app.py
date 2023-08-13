@@ -40,91 +40,110 @@ st.set_page_config(layout = "wide")
 
 st.sidebar.subheader("Inputs")
 
-form_input = st.sidebar.form("inputs")
-input_data = form_input.file_uploader('Upload Data File (CSV or XLSX)')
-inputs_submitted = form_input.form_submit_button("Go!")
+input_data = st.sidebar.file_uploader('Upload Data File (CSV or XLSX)')
 
-st.sidebar.write(datetime.now())
+current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+st.sidebar.write(f'<span style="color: grey;">{current_datetime}</span>', unsafe_allow_html=True)
+
+tab_fitting = st.tabs(["Fitting"])
+
+tab_fitting_data, tab_fitting_fit, tab_fitting_desc = st.tabs(["Data", "Fit Model", "Describe Model"])
 
 if input_data is not None:
-  
   df_input = read_data(input_data)
 
   column_select_target = df_input.columns.tolist()
-  select_target = form_input.selectbox("Choose Target for Classification Model", column_select_target)
+  column_select_target = [" "] + column_select_target
+  select_target = st.sidebar.selectbox("Choose Target for Classification Model", column_select_target)
   
-  # show uploaded data
-  st.subheader("Uploaded Data")
-  show_all_data_uploaded = st.checkbox("Show all data", key = "alldata_uploaded")
-  if show_all_data_uploaded:
-    st.dataframe(df_input, hide_index = True)
-  if not show_all_data_uploaded:
-    st.dataframe(df_input.head(3), hide_index = True)
-
-  if inputs_submitted:
-    df_input["target"] = df_input[select_target]
-    df_input.drop(select_target, axis = 1, inplace = True)
-    first_column = df_input.pop('target')
-    df_input.insert(0, 'target', first_column)
-    st.subheader("Counts of Target")
-    st.write(df_input.target.value_counts())
-
-    # pre-process
-    X, y = preprocess_data_classif(df_input)
+  with tab_fitting_data:
     
-    # Split data into train and test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
+    st.subheader("Uploaded Data")
+    show_all_data_uploaded = st.checkbox("Show all data", key = "alldata_uploaded")
     
-    # show pre-processed data
-    st.subheader("Pre-Processed Features")
-    show_all_data_preproc = st.checkbox("Show all data", key = "alldata_preproc")
-    if show_all_data_preproc:
-      st.dataframe(X, hide_index = True)
-    if not show_all_data_preproc:
-      st.dataframe(X.head(3), hide_index = True)
+    if show_all_data_uploaded:
+      st.dataframe(df_input, hide_index = False)
+    if not show_all_data_uploaded:
+      st.dataframe(df_input.head(3), hide_index = False)
+  
+    if select_target != " ":
+      df_input["target"] = df_input[select_target]
+      df_input.drop(select_target, axis = 1, inplace = True)
+      first_column = df_input.pop('target')
+      df_input.insert(0, 'target', first_column)
+      st.subheader("Counts of Target")
+      st.write(df_input.target.value_counts())
 
-    st.write("todo: 'fitting y on X1, X2, etc.'")
-
-    st.subheader("Fitted Models")
-    
-    lb = preprocessing.LabelBinarizer()
-    y = lb.fit_transform(y)
-    fm = fit_eval_model_classif(RandomForestClassifier())
-    
-    st.write(fm[0])
-    st.dataframe(fm[1], hide_index = True)
-    st.write(fm[3])
-    st.dataframe(fm[2], hide_index = True)
-    st.sidebar.download_button("Download Model", data=pickle.dumps(fm[5]),file_name=f"{fm[0]}.pkl")
-    
-    st.sidebar.button("Reset", on_click = st.experimental_rerun)
-
-    if 1 == 2: # "Scoring"
+      # pre-process
+      X, y = preprocess_data_classif(df_input)
+  
+      # show pre-processed data
+      st.subheader("Pre-Processed Data")
+      show_all_data_preproc = st.checkbox("Show all data", key = "alldata_preproc")
+  
+      col_fit_1, col_fit_2 = st.columns([1, 10])
       
-      # Upload the pickled model
-      model_file = st.sidebar.file_uploader("Upload Pickled Model", type=["pkl"])
+      if show_all_data_preproc:
+        with col_fit_1:
+          st.write("Target")
+          st.dataframe(y, hide_index = False)
+        with col_fit_2:
+          st.write("Features")
+          st.dataframe(X, hide_index = False)
+      if not show_all_data_preproc:
+        with col_fit_1:
+          st.write("Target")
+          st.dataframe(y[:3], hide_index = False)
+        with col_fit_2:
+          st.write("Features")
+          st.dataframe(X.head(3), hide_index = False)
       
-      if model_file is not None:
+      # Split data into train and test
+      X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
+      
+      with tab_fitting_fit:
+      
+        fm = fit_eval_model_classif(RandomForestClassifier())
+  
+        st.write("todo: 'fitting y on X1, X2, etc.'")
+        st.subheader("Fitted Models")
+
+        st.write(fm[0])
+        st.dataframe(fm[1], hide_index = True)
+        st.write(fm[3])
+        st.dataframe(fm[2], hide_index = True)
+        st.sidebar.download_button("Download Model", data=pickle.dumps(fm[5]),file_name=f"{fm[0]}.pkl")
         
-        # Load the pickled model
-        with model_file as f:
-          model_scoring = pickle.load(f)
+        st.sidebar.button("Reset", on_click = st.experimental_rerun)
     
-        # Model scoring
-        y_scored = model_scoring.predict(X)
-    
-        # Calculate confusion matrix
-        cm = confusion_matrix(y, y_scored)
-    
-        # Display confusion matrix
-        st.write("Confusion Matrix:")
-        st.write(pd.DataFrame(cm, columns=["Predicted 0", "Predicted 1"], index=["Actual 0", "Actual 1"]))
+      if 1 == 2: # "Scoring"
+        
+        # Upload the pickled model
+        model_file = st.sidebar.file_uploader("Upload Pickled Model", type=["pkl"])
+        
+        if model_file is not None:
+          
+          # Load the pickled model
+          with model_file as f:
+            model_scoring = pickle.load(f)
       
-        # download predictions
-        data_pred = df_input.copy()
-        data_pred['Predictions'] = y_scored
-        st.write(data_pred)
-        st.write("todo: target and orig.target need to be comparable")
-        st.write("fix download button")
-        st.sidebar.download_button("Download Scored Data", data=data_pred)
-  
+          # Model scoring
+          y_scored = model_scoring.predict(X)
+      
+          # Calculate confusion matrix
+          cm = confusion_matrix(y, y_scored)
+      
+          # Display confusion matrix
+          st.write("Confusion Matrix:")
+          st.write(pd.DataFrame(cm, columns=["Predicted 0", "Predicted 1"], index=["Actual 0", "Actual 1"]))
+        
+          # download predictions
+          data_pred = df_input.copy()
+          data_pred['Predictions'] = y_scored
+          st.write(data_pred)
+          st.write("todo: target and orig.target need to be comparable")
+          st.write("fix download button")
+          st.sidebar.download_button("Download Scored Data", data=data_pred)
+    
+
+        

@@ -13,15 +13,17 @@ def preprocess_data_classif(df):
   # split X, y   
   X = df.drop("target", axis=1).copy()
   y = df["target"].copy() 
-  
   # encode  character model features
   vars_categorical = X.select_dtypes(include="O").columns.to_list()
   vars_remainder = X.select_dtypes(exclude="O").columns.to_list()
-  ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)],remainder="passthrough",)
+  ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)], remainder="passthrough",)
   ct.fit(X)
   X = ct.transform(X)
   X = pd.DataFrame(X, columns=vars_categorical+vars_remainder)
-  
+  # encode target as binary
+  lb = preprocessing.LabelBinarizer()
+  y = lb.fit_transform(y)
+
   return X, y
 
 def fit_eval_model_classif(model):
@@ -37,12 +39,13 @@ def fit_eval_model_classif(model):
   y_test_pred = mod.predict(X_test)
     
   acc_train = metrics.accuracy_score(y_train, y_train_pred)
-  f1_train =  metrics.f1_score(y_train, y_train_pred, average = "binary")
-  auc_train = metrics.roc_auc_score(y_train, y_train_pred, average = "macro")
+
+  f1_train =  metrics.f1_score(y_train, y_train_pred)
+  auc_train = metrics.roc_auc_score(y_train, y_train_pred)
   
   acc_test = metrics.accuracy_score(y_test, y_test_pred)
-  f1_test =  metrics.f1_score(y_test, y_test_pred, average = "binary")
-  auc_test = metrics.roc_auc_score(y_test, y_test_pred, average = "macro")
+  f1_test =  metrics.f1_score(y_test, y_test_pred)
+  auc_test = metrics.roc_auc_score(y_test, y_test_pred)
   df_eval = pd.DataFrame({
       ' ':['Train','Test','Change'],
       'Accuracy':[acc_train, acc_test, (acc_test/acc_train)-1],
