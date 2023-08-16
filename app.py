@@ -34,6 +34,7 @@ import pickle
 from datetime import datetime
 import scikitplot as skplt # https://scikit-plot.readthedocs.io/en/stable/metrics.html
 # https://drive.google.com/file/d/1ZJ9TEdOnK1SQdyGY0ClCRkbw9WJjvML4/view?pli=1
+from sklearn.model_selection import cross_val_predict
 
 exec(open('functions.py').read())
 
@@ -48,7 +49,7 @@ st.sidebar.write(f'<span style="color: grey;">{current_datetime}</span>', unsafe
 
 tab_fitting = st.tabs(["Fitting"])
 
-tab_fitting_data, tab_fitting_fit, tab_fitting_desc = st.tabs(["Data", "Fit Model", "Describe Model"])
+tab_fitting_data, tab_fitting_fit, tab_fitting_describe = st.tabs(["Data", "Fit Model", "Describe Model"])
 
 if input_data is not None:
   df_input = read_data(input_data)
@@ -77,12 +78,13 @@ if input_data is not None:
 
       # pre-process
       X, y = preprocess_data_classif(df_input)
-  
+
       # show pre-processed data
       st.subheader("Pre-Processed Data")
+      st.write(y)
       show_all_data_preproc = st.checkbox("Show all data", key = "alldata_preproc")
   
-      col_fit_1, col_fit_2 = st.columns([1, 10])
+      col_fit_1, col_fit_2 = st.columns([1, 8])
       
       if show_all_data_preproc:
         with col_fit_1:
@@ -109,12 +111,23 @@ if input_data is not None:
         col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
           
         with col_fm_1:
-          get_kpi_model(RandomForestClassifier())
+          mod = RandomForestClassifier()
+          st.write(str(mod))
+          mod.fit(X_train, y_train)
+          y_train_pred = mod.predict(X_train)
+          y_test_pred = mod.predict(X_test)
+          pred_rf_train = cross_val_predict(mod, X_train, y_train)
+          skplt.metrics.plot_confusion_matrix(y_train, pred_rf_train, normalize=True)
+          st.pyplot.show()
+          
         with col_fm_2:
-          get_kpi_model(GradientBoostingClassifier())
+          st.write(1) # fit_eval_model_classif(GradientBoostingClassifier())
         with col_fm_3:
-          get_kpi_model(AdaBoostClassifier())
+          st.write(1) # fit_eval_model_classif(AdaBoostClassifier())
         
+      with tab_fitting_describe:
+        st.write("sd")
+        #skplot.plot_confusion_matrix()
         
         # st.sidebar.download_button("Download Model", data=pickle.dumps(fm[5]),file_name=f"{fm[0]}.pkl")
         #st.sidebar.button("Reset", on_click = st.experimental_rerun)

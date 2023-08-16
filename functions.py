@@ -23,11 +23,9 @@ def preprocess_data_classif(df):
   # encode target as binary
   lb = preprocessing.LabelBinarizer()
   y = lb.fit_transform(y)
-
   return X, y
 
-def fit_eval_model_classif(model):
-  mod = model
+def fit_eval_model_classif(mod):
   mod_str = str(mod)
   mod.fit(X_train, y_train)
   importance = mod.feature_importances_
@@ -54,11 +52,5 @@ def fit_eval_model_classif(model):
     })
   conf_matrix = confusion_matrix(y_test, y_test_pred)
 
-  return mod_str, df_eval, importance, conf_matrix, y_test_pred, mod
+  return mod_str, df_eval, conf_matrix, importance, y_test_pred
 
-def get_kpi_model(fun_model):
-  fm = fit_eval_model_classif(fun_model)
-  st.write(fm[0])
-  st.dataframe(fm[1], hide_index = True)
-  st.write(fm[3])
-  st.dataframe(fm[2], hide_index = True)
