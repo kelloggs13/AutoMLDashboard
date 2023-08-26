@@ -1,0 +1,15 @@
+artifact_uri: file:///D:/DataScience%20Portfolio/AutoMLDashboard/mlruns/0/f2c0393f5deb470698a11251d8ebc574/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: f2c0393f5deb470698a11251d8ebc574
+run_name: big-fawn-326
+run_uuid: f2c0393f5deb470698a11251d8ebc574
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1693082909063
+status: 1
+tags: []
+user_id: tobia

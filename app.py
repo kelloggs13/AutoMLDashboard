@@ -1,3 +1,14 @@
+
+# todo:
+# - strings one-hot encoden => heisst auch dass strings bei welchen label encoding besser wäre( weil es eine
+# reihenfolge gibt) bereits or dem dashboard als integer definiert sein müssen.
+
+# preprocessign muss
+# - bei test und train gleich erfolgen
+# - aich beim predicten erfolgen, gemäss dem selben vrogehen wie biem trainieren des modells
+# --> beides im dashboard (??)
+
+
 # future topics
 # - onehotencoding
 # - readme (intro?) page
@@ -13,6 +24,7 @@
 # https://discuss.streamlit.io/t/download-pickle-file-of-trained-model-using-st-download-button/27395
 # limit targetvariables in selctor to "objects"  // things with 2 distinct values and no missing values
 
+import mlflow
 import os
 import streamlit as st
 from streamlit_toggle import st_toggle_switch
@@ -56,6 +68,7 @@ if input_data is not None:
 
   column_select_target = df_input.columns.tolist()
   column_select_target = [" "] + column_select_target
+  do_preproc = st.sidebar.checkbox("Do Pre-Processing?", key = "do_preproc")
   select_target = st.sidebar.selectbox("Choose Target for Classification Model", column_select_target)
   
   with tab_fitting_data:
@@ -81,7 +94,6 @@ if input_data is not None:
 
       # show pre-processed data
       st.subheader("Pre-Processed Data")
-      st.write(y)
       show_all_data_preproc = st.checkbox("Show all data", key = "alldata_preproc")
   
       col_fit_1, col_fit_2 = st.columns([1, 8])
@@ -108,22 +120,29 @@ if input_data is not None:
         
         st.header("Fitted Models")
   
-        col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
+        col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 2])
           
+        mod = GradientBoostingClassifier()
+        st.write(str(mod))
+        mod.fit(X_train, y_train)
+        y_train_pred = mod.predict(X_train)
+        y_test_pred = mod.predict(X_test)
+        acc_test = metrics.accuracy_score(y_test, y_test_pred)
+        acc_train = metrics.accuracy_score(y_train, y_train_pred)
+        
         with col_fm_1:
-          mod = RandomForestClassifier()
-          st.write(str(mod))
-          mod.fit(X_train, y_train)
-          y_train_pred = mod.predict(X_train)
-          y_test_pred = mod.predict(X_test)
-          pred_rf_train = cross_val_predict(mod, X_train, y_train)
-          skplt.metrics.plot_confusion_matrix(y_train, pred_rf_train, normalize=True)
-          st.pyplot.show()
-          
+          st.subheader("Train")
+          st.write(f"Accuary: {acc_train:.1%}")
+          st.write(confusion_matrix(y_train, y_train_pred, normalize='all'))
+  
         with col_fm_2:
-          st.write(1) # fit_eval_model_classif(GradientBoostingClassifier())
+          st.subheader("Test")
+          st.write(f"Accuary: {acc_test:.1%}")
+          st.write(confusion_matrix(y_test, y_test_pred, normalize='all'))
+          
         with col_fm_3:
-          st.write(1) # fit_eval_model_classif(AdaBoostClassifier())
+          st.write("s")
+           
         
       with tab_fitting_describe:
         st.write("sd")

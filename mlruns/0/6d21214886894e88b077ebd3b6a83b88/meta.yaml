@@ -1,0 +1,15 @@
+artifact_uri: file:///D:/DataScience%20Portfolio/AutoMLDashboard/mlruns/0/6d21214886894e88b077ebd3b6a83b88/artifacts
+end_time: 1693082855979
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 6d21214886894e88b077ebd3b6a83b88
+run_name: masked-shrike-388
+run_uuid: 6d21214886894e88b077ebd3b6a83b88
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1693082237231
+status: 3
+tags: []
+user_id: tobia
