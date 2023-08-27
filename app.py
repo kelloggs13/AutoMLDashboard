@@ -41,6 +41,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import OrdinalEncoder, TargetEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import accuracy_score, f1_score
@@ -48,6 +49,7 @@ from sklearn import preprocessing
 from datetime import datetime
 import matplotlib.pyplot as plt
 import pickle
+from sklearn.neural_network import MLPClassifier
 
 exec(open('functions.py').read())
 
@@ -95,11 +97,11 @@ if input_data is not None:
     # evaluate and explain models    
     col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
     with col_fm_1:
-      fit_and_describe(DecisionTreeClassifier())
-    with col_fm_2:
       fit_and_describe(RandomForestClassifier())
-    with col_fm_3:
+    with col_fm_2:
       fit_and_describe(GradientBoostingClassifier())
+    with col_fm_3:
+      fit_and_describe(AdaBoostClassifier())
   
   
 
