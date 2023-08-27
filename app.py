@@ -33,26 +33,19 @@
 # https://discuss.streamlit.io/t/download-pickle-file-of-trained-model-using-st-download-button/27395
 # limit targetvariables in selctor to "objects"  // things with 2 distinct values and no missing values
 
-import mlflow
 import os
 import streamlit as st
-from streamlit_toggle import st_toggle_switch
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
-import streamlit.components.v1 as components
-import pygwalker as pyg
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
 from sklearn.preprocessing import OrdinalEncoder, TargetEncoder
 from sklearn.compose import ColumnTransformer
-from plotnine import *
-import altair as alt
 from sklearn import metrics
-import numpy as np
 from sklearn import preprocessing
 from datetime import datetime
-from sklearn.model_selection import cross_val_predict
 import matplotlib.pyplot as plt
 
 exec(open('functions.py').read())
