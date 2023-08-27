@@ -123,13 +123,11 @@ if input_data is not None:
     col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
     
     with col_fm_1:
-      fit_and_describe(GradientBoostingClassifier())
+      fit_and_describe(DecisionTreeClassifier())
     with col_fm_2:
       fit_and_describe(RandomForestClassifier())
     with col_fm_3:
-      fit_and_describe(DecisionTreeClassifier())
-       
-      
+      fit_and_describe(GradientBoostingClassifier())
       
       # st.sidebar.download_button("Download Model", data=pickle.dumps(fm[5]),file_name=f"{fm[0]}.pkl")
       #st.sidebar.button("Reset", on_click = st.experimental_rerun)
