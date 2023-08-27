@@ -72,22 +72,22 @@ if input_data is not None:
   column_select_target = df_input.columns.tolist()
   column_select_target = [" "] + column_select_target
   select_target = st.sidebar.selectbox("Choose Target for Classification Model", column_select_target)
-  
-  st.subheader("Uploaded Data")
-  show_all_data_uploaded = st.checkbox("Show all data", key = "alldata_uploaded")
-  
-  if show_all_data_uploaded:
-    st.dataframe(df_input, hide_index = False)
-  if not show_all_data_uploaded:
-    st.dataframe(df_input.head(3), hide_index = False)
 
   if select_target != " ":
     df_input["target"] = df_input[select_target]
     df_input.drop(select_target, axis = 1, inplace = True)
     first_column = df_input.pop('target')
     df_input.insert(0, 'target', first_column)
-    st.subheader("Counts of Target")
-    st.write(df_input.target.value_counts())
+    
+    col_data_1, col_data_2 = st.columns([1, 5])
+    
+    with col_data_1:
+      st.subheader("Counts of Target")
+      st.write(df_input.target.value_counts())
+  
+    with col_data_2:
+      st.subheader("Uploaded Data")
+      st.dataframe(df_input, hide_index = False)
 
     # pre-process
     X, y = preprocess_data_classif(df_input)
@@ -95,45 +95,39 @@ if input_data is not None:
     # Split data into train and test
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
     
-    st.header("Fitted Models")
-
-    mod = GradientBoostingClassifier()
-    st.write(str(mod))
-    mod.fit(X_train, y_train)
-    y_train_pred = mod.predict(X_train)
-    y_test_pred = mod.predict(X_test)
-
-    acc_train = metrics.accuracy_score(y_train, y_train_pred)
-    acc_test = metrics.accuracy_score(y_test, y_test_pred)
-    f1_train = metrics.f1_score(y_train, y_train_pred, average='micro')
-    f1_test = metrics.f1_score(y_test, y_test_pred, average='micro')
-    
-    col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
-    
-    with col_fm_1:
-      st.subheader("Train")
-      st.write(f"F1: {f1_train:.1%}")
-      st.write(f"Accuary: {acc_train:.1%}")
+    def fit_and_describe(mod):
+   #   mod = GradientBoostingClassifier()
+      st.header(str(mod)[:-2])
+      mod.fit(X_train, y_train)
+      y_train_pred = mod.predict(X_train)
+      y_test_pred = mod.predict(X_test)
+  
+      metric_name = "f1_score"
+      metric_train = metrics.f1_score(y_train, y_train_pred, average='micro')
+      metric_test = metrics.f1_score(y_test, y_test_pred, average='micro')
       st.write(confusion_matrix(y_train, y_train_pred, normalize='all'))
+  
       importances = mod.feature_importances_
       indices = np.argsort(importances)[::-1]
       feature_importance = mod.feature_importances_
       sorted_idx = np.argsort(feature_importance)
+      st.write(metric_name+"_train", round(metric_train, 3))
+      st.write(metric_name+"_test", round(metric_test, 3))
       fig = plt.figure(figsize=(12, 6))
       plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center')
       plt.yticks(range(len(sorted_idx)), np.array(X_test.columns)[sorted_idx])
       plt.title('Feature Importance')
       st.pyplot(fig)
 
-
-    with col_fm_2:
-      st.subheader("Test")
-      st.write(f"F1: {f1_test:.1%}")
-      st.write(f"Accuary: {acc_test:.1%}")
-      st.write(confusion_matrix(y_test, y_test_pred, normalize='all'))
       
+    col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
+    
+    with col_fm_1:
+      fit_and_describe(GradientBoostingClassifier())
+    with col_fm_2:
+      fit_and_describe(RandomForestClassifier())
     with col_fm_3:
-      st.write("s")
+      fit_and_describe(DecisionTreeClassifier())
        
       
       
