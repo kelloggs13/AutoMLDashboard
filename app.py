@@ -8,6 +8,10 @@
 # - strings one-hot encoden => heisst auch dass strings bei welchen label encoding besser wäre( weil es eine
 # reihenfolge gibt) bereits or dem dashboard als integer definiert sein müssen.
 
+# clean up imports
+# clean up / remove preproc
+# add readme
+
 # preprocessign muss
 # - bei test und train gleich erfolgen
 # - aich beim predicten erfolgen, gemäss dem selben vrogehen wie biem trainieren des modells
@@ -47,10 +51,7 @@ import altair as alt
 from sklearn import metrics
 import numpy as np
 from sklearn import preprocessing
-import pickle
 from datetime import datetime
-import scikitplot as skplt # https://scikit-plot.readthedocs.io/en/stable/metrics.html
-# https://drive.google.com/file/d/1ZJ9TEdOnK1SQdyGY0ClCRkbw9WJjvML4/view?pli=1
 from sklearn.model_selection import cross_val_predict
 import matplotlib.pyplot as plt
 
@@ -94,8 +95,8 @@ if input_data is not None:
 
     # Split data into train and test
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
-    
 
+    # evaluate and explain models    
     col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
     
     with col_fm_1:
@@ -105,9 +106,6 @@ if input_data is not None:
     with col_fm_3:
       fit_and_describe(GradientBoostingClassifier())
       
-      # st.sidebar.download_button("Download Model", data=pickle.dumps(fm[5]),file_name=f"{fm[0]}.pkl")
-      #st.sidebar.button("Reset", on_click = st.experimental_rerun)
- 
   
 
       
