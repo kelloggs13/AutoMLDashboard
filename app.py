@@ -1,4 +1,9 @@
 
+# final toolset:
+# - preprocessing funcitons
+# - dashboard without prepcorcesing that can classif/regregssion and #
+# - supports multicalss classifaction
+
 # todo:
 # - strings one-hot encoden => heisst auch dass strings bei welchen label encoding besser wäre( weil es eine
 # reihenfolge gibt) bereits or dem dashboard als integer definiert sein müssen.
@@ -47,6 +52,7 @@ from datetime import datetime
 import scikitplot as skplt # https://scikit-plot.readthedocs.io/en/stable/metrics.html
 # https://drive.google.com/file/d/1ZJ9TEdOnK1SQdyGY0ClCRkbw9WJjvML4/view?pli=1
 from sklearn.model_selection import cross_val_predict
+import matplotlib.pyplot as plt
 
 exec(open('functions.py').read())
 
@@ -59,126 +65,81 @@ input_data = st.sidebar.file_uploader('Upload Data File (CSV or XLSX)')
 current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 st.sidebar.write(f'<span style="color: grey;">{current_datetime}</span>', unsafe_allow_html=True)
 
-tab_fitting = st.tabs(["Fitting"])
-
-tab_fitting_data, tab_fitting_fit, tab_fitting_describe = st.tabs(["Data", "Fit Model", "Describe Model"])
 
 if input_data is not None:
   df_input = read_data(input_data)
 
   column_select_target = df_input.columns.tolist()
   column_select_target = [" "] + column_select_target
-  do_preproc = st.sidebar.checkbox("Do Pre-Processing?", key = "do_preproc")
   select_target = st.sidebar.selectbox("Choose Target for Classification Model", column_select_target)
   
-  with tab_fitting_data:
-    
-    st.subheader("Uploaded Data")
-    show_all_data_uploaded = st.checkbox("Show all data", key = "alldata_uploaded")
-    
-    if show_all_data_uploaded:
-      st.dataframe(df_input, hide_index = False)
-    if not show_all_data_uploaded:
-      st.dataframe(df_input.head(3), hide_index = False)
+  st.subheader("Uploaded Data")
+  show_all_data_uploaded = st.checkbox("Show all data", key = "alldata_uploaded")
   
-    if select_target != " ":
-      df_input["target"] = df_input[select_target]
-      df_input.drop(select_target, axis = 1, inplace = True)
-      first_column = df_input.pop('target')
-      df_input.insert(0, 'target', first_column)
-      st.subheader("Counts of Target")
-      st.write(df_input.target.value_counts())
+  if show_all_data_uploaded:
+    st.dataframe(df_input, hide_index = False)
+  if not show_all_data_uploaded:
+    st.dataframe(df_input.head(3), hide_index = False)
 
-      # pre-process
-      X, y = preprocess_data_classif(df_input)
+  if select_target != " ":
+    df_input["target"] = df_input[select_target]
+    df_input.drop(select_target, axis = 1, inplace = True)
+    first_column = df_input.pop('target')
+    df_input.insert(0, 'target', first_column)
+    st.subheader("Counts of Target")
+    st.write(df_input.target.value_counts())
 
-      # show pre-processed data
-      st.subheader("Pre-Processed Data")
-      show_all_data_preproc = st.checkbox("Show all data", key = "alldata_preproc")
-  
-      col_fit_1, col_fit_2 = st.columns([1, 8])
-      
-      if show_all_data_preproc:
-        with col_fit_1:
-          st.write("Target")
-          st.dataframe(y, hide_index = False)
-        with col_fit_2:
-          st.write("Features")
-          st.dataframe(X, hide_index = False)
-      if not show_all_data_preproc:
-        with col_fit_1:
-          st.write("Target")
-          st.dataframe(y[:3], hide_index = False)
-        with col_fit_2:
-          st.write("Features")
-          st.dataframe(X.head(3), hide_index = False)
-      
-      # Split data into train and test
-      X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
-      
-      with tab_fitting_fit:
-        
-        st.header("Fitted Models")
-  
-        col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 2])
-          
-        mod = GradientBoostingClassifier()
-        st.write(str(mod))
-        mod.fit(X_train, y_train)
-        y_train_pred = mod.predict(X_train)
-        y_test_pred = mod.predict(X_test)
-        acc_test = metrics.accuracy_score(y_test, y_test_pred)
-        acc_train = metrics.accuracy_score(y_train, y_train_pred)
-        
-        with col_fm_1:
-          st.subheader("Train")
-          st.write(f"Accuary: {acc_train:.1%}")
-          st.write(confusion_matrix(y_train, y_train_pred, normalize='all'))
-  
-        with col_fm_2:
-          st.subheader("Test")
-          st.write(f"Accuary: {acc_test:.1%}")
-          st.write(confusion_matrix(y_test, y_test_pred, normalize='all'))
-          
-        with col_fm_3:
-          st.write("s")
-           
-        
-      with tab_fitting_describe:
-        st.write("sd")
-        #skplot.plot_confusion_matrix()
-        
-        # st.sidebar.download_button("Download Model", data=pickle.dumps(fm[5]),file_name=f"{fm[0]}.pkl")
-        #st.sidebar.button("Reset", on_click = st.experimental_rerun)
-    
-      if 1 == 2: # "Scoring"
-        
-        # Upload the pickled model
-        model_file = st.sidebar.file_uploader("Upload Pickled Model", type=["pkl"])
-        
-        if model_file is not None:
-          
-          # Load the pickled model
-          with model_file as f:
-            model_scoring = pickle.load(f)
-      
-          # Model scoring
-          y_scored = model_scoring.predict(X)
-      
-          # Calculate confusion matrix
-          cm = confusion_matrix(y, y_scored)
-      
-          # Display confusion matrix
-          st.write("Confusion Matrix:")
-          st.write(pd.DataFrame(cm, columns=["Predicted 0", "Predicted 1"], index=["Actual 0", "Actual 1"]))
-        
-          # download predictions
-          data_pred = df_input.copy()
-          data_pred['Predictions'] = y_scored
-          st.write(data_pred)
-          st.write("todo: target and orig.target need to be comparable")
-          st.write("fix download button")
-          st.sidebar.download_button("Download Scored Data", data=data_pred)
-    
+    # pre-process
+    X, y = preprocess_data_classif(df_input)
 
-        
+    # Split data into train and test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
+    
+    st.header("Fitted Models")
+
+    mod = GradientBoostingClassifier()
+    st.write(str(mod))
+    mod.fit(X_train, y_train)
+    y_train_pred = mod.predict(X_train)
+    y_test_pred = mod.predict(X_test)
+
+    acc_train = metrics.accuracy_score(y_train, y_train_pred)
+    acc_test = metrics.accuracy_score(y_test, y_test_pred)
+    f1_train = metrics.f1_score(y_train, y_train_pred, average='micro')
+    f1_test = metrics.f1_score(y_test, y_test_pred, average='micro')
+    
+    col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
+    
+    with col_fm_1:
+      st.subheader("Train")
+      st.write(f"F1: {f1_train:.1%}")
+      st.write(f"Accuary: {acc_train:.1%}")
+      st.write(confusion_matrix(y_train, y_train_pred, normalize='all'))
+      importances = mod.feature_importances_
+      indices = np.argsort(importances)[::-1]
+      feature_importance = mod.feature_importances_
+      sorted_idx = np.argsort(feature_importance)
+      fig = plt.figure(figsize=(12, 6))
+      plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center')
+      plt.yticks(range(len(sorted_idx)), np.array(X_test.columns)[sorted_idx])
+      plt.title('Feature Importance')
+      st.pyplot(fig)
+
+
+    with col_fm_2:
+      st.subheader("Test")
+      st.write(f"F1: {f1_test:.1%}")
+      st.write(f"Accuary: {acc_test:.1%}")
+      st.write(confusion_matrix(y_test, y_test_pred, normalize='all'))
+      
+    with col_fm_3:
+      st.write("s")
+       
+      
+      
+      # st.sidebar.download_button("Download Model", data=pickle.dumps(fm[5]),file_name=f"{fm[0]}.pkl")
+      #st.sidebar.button("Reset", on_click = st.experimental_rerun)
+ 
+  
+
+      

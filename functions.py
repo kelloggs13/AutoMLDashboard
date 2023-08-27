@@ -14,16 +14,15 @@ def preprocess_data_classif(df):
   X = df.drop("target", axis=1).copy()
   y = df["target"].copy() 
   # encode  character model features
-  if do_preproc:
-    vars_categorical = X.select_dtypes(include="O").columns.to_list()
-    vars_remainder = X.select_dtypes(exclude="O").columns.to_list()
-    ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)], remainder="passthrough",)
-    ct.fit(X)
-    X = ct.transform(X)
-    X = pd.DataFrame(X, columns=vars_categorical+vars_remainder)
-    # encode target as binary
-    # lb = preprocessing.LabelBinarizer()
-    # y = lb.fit_transform(y)
+  vars_categorical = X.select_dtypes(include="O").columns.to_list()
+  vars_remainder = X.select_dtypes(exclude="O").columns.to_list()
+  ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)], remainder="passthrough",)
+  ct.fit(X)
+  X = ct.transform(X)
+  X = pd.DataFrame(X, columns=vars_categorical+vars_remainder)
+  # encode target as binary
+  # lb = preprocessing.LabelBinarizer()
+  # y = lb.fit_transform(y)
   return X, y
 
 def fit_eval_model_classif(mod):
