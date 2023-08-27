@@ -25,27 +25,44 @@ def preprocess_data_classif(df):
   # y = lb.fit_transform(y)
   return X, y
 
+        
 def fit_and_describe(mod):
-  st.header(str(mod)[:-2])
+  mod_name = str(mod).replace("Classifier()", "")
+  st.header(mod_name, divider = "red")
   mod.fit(X_train, y_train)
   y_train_pred = mod.predict(X_train)
   y_test_pred = mod.predict(X_test)
 
-  metric_name = "f1_score"
-  metric_train = metrics.f1_score(y_train, y_train_pred, average='micro')
-  metric_test = metrics.f1_score(y_test, y_test_pred, average='micro')
+  accuracy_train = accuracy_score(y_train, y_train_pred)
+  accuracy_test = accuracy_score(y_test, y_test_pred)
+  f1_train = f1_score(y_train, y_train_pred, average='micro')
+  f1_test = f1_score(y_test, y_test_pred, average='micro')
+
+  df_metrics = pd.DataFrame({
+    '':["Train", "Test"]
+   ,'Accuracy':[accuracy_train, accuracy_test]
+   ,'F1':[f1_train, f1_test]
+  })
+
+  st.subheader("Metrics")
+  st.write(df_metrics)
+
+  st.subheader("Confusion Matrix")
   st.write(confusion_matrix(y_test, y_test_pred))
 
   importances = mod.feature_importances_
   indices = np.argsort(importances)[::-1]
   feature_importance = mod.feature_importances_
   sorted_idx = np.argsort(feature_importance)
-  st.write(metric_name+"_train", round(metric_train, 3))
-  st.write(metric_name+"_test", round(metric_test, 3))
-  fig = plt.figure(figsize=(12, 6))
+  fig = plt.figure(figsize=(12, 12))
   plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center')
   plt.yticks(range(len(sorted_idx)), np.array(X_test.columns)[sorted_idx])
-  plt.title('Feature Importance')
+  st.subheader("Feature Importance")
   st.pyplot(fig)
-
   
+  # Download button
+  st.download_button(
+        "Download Model",
+        data = pickle.dumps(mod),
+        file_name = mod_name + ".pkl",
+    )

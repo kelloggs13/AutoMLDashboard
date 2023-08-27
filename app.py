@@ -43,10 +43,11 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
 from sklearn.preprocessing import OrdinalEncoder, TargetEncoder
 from sklearn.compose import ColumnTransformer
-from sklearn import metrics
+from sklearn.metrics import accuracy_score, f1_score
 from sklearn import preprocessing
 from datetime import datetime
 import matplotlib.pyplot as plt
+import pickle
 
 exec(open('functions.py').read())
 
@@ -65,7 +66,7 @@ if input_data is not None:
 
   column_select_target = df_input.columns.tolist()
   column_select_target = [" "] + column_select_target
-  select_target = st.sidebar.selectbox("Choose Target for Classification Model", column_select_target)
+  select_target = st.sidebar.selectbox("Choose Target for Classification", column_select_target)
 
   if select_target != " ":
     df_input["target"] = df_input[select_target]
@@ -73,6 +74,8 @@ if input_data is not None:
     first_column = df_input.pop('target')
     df_input.insert(0, 'target', first_column)
     
+    st.header("Inputs", divider = "red")
+
     col_data_1, col_data_2 = st.columns([1, 5])
     
     with col_data_1:
@@ -91,14 +94,13 @@ if input_data is not None:
 
     # evaluate and explain models    
     col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
-    
     with col_fm_1:
       fit_and_describe(DecisionTreeClassifier())
     with col_fm_2:
       fit_and_describe(RandomForestClassifier())
     with col_fm_3:
       fit_and_describe(GradientBoostingClassifier())
-      
+  
   
 
       
