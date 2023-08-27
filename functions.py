@@ -25,32 +25,27 @@ def preprocess_data_classif(df):
   # y = lb.fit_transform(y)
   return X, y
 
-def fit_eval_model_classif(mod):
-  mod_str = str(mod)
+def fit_and_describe(mod):
+  st.header(str(mod)[:-2])
   mod.fit(X_train, y_train)
-  importance = mod.feature_importances_
-  importance = pd.Series(importance, index=X_train.columns).sort_values(ascending = False)
-  importance = pd.DataFrame(importance)
-  importance["feature"] = importance.index
-  importance.columns = ["feature_importance", "feature"]
   y_train_pred = mod.predict(X_train)
   y_test_pred = mod.predict(X_test)
-    
-  acc_train = metrics.accuracy_score(y_train, y_train_pred)
 
-  f1_train =  metrics.f1_score(y_train, y_train_pred)
-  auc_train = metrics.roc_auc_score(y_train, y_train_pred)
+  metric_name = "f1_score"
+  metric_train = metrics.f1_score(y_train, y_train_pred, average='micro')
+  metric_test = metrics.f1_score(y_test, y_test_pred, average='micro')
+  st.write(confusion_matrix(y_test, y_test_pred))
+
+  importances = mod.feature_importances_
+  indices = np.argsort(importances)[::-1]
+  feature_importance = mod.feature_importances_
+  sorted_idx = np.argsort(feature_importance)
+  st.write(metric_name+"_train", round(metric_train, 3))
+  st.write(metric_name+"_test", round(metric_test, 3))
+  fig = plt.figure(figsize=(12, 6))
+  plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center')
+  plt.yticks(range(len(sorted_idx)), np.array(X_test.columns)[sorted_idx])
+  plt.title('Feature Importance')
+  st.pyplot(fig)
+
   
-  acc_test = metrics.accuracy_score(y_test, y_test_pred)
-  f1_test =  metrics.f1_score(y_test, y_test_pred)
-  auc_test = metrics.roc_auc_score(y_test, y_test_pred)
-  df_eval = pd.DataFrame({
-      ' ':['Train','Test','Change'],
-      'Accuracy':[acc_train, acc_test, (acc_test/acc_train)-1],
-      'F1':[f1_train, f1_test, (f1_test/f1_train)-1],
-      'AUC':[auc_train, auc_test, (auc_test/auc_train)-1]
-    })
-  conf_matrix = confusion_matrix(y_test, y_test_pred)
-
-  return mod_str, df_eval, conf_matrix, importance, y_test_pred
-
