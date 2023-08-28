@@ -41,7 +41,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
-from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import OrdinalEncoder, TargetEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import accuracy_score, f1_score
@@ -49,7 +48,6 @@ from sklearn import preprocessing
 from datetime import datetime
 import matplotlib.pyplot as plt
 import pickle
-from sklearn.neural_network import MLPClassifier
 
 exec(open('functions.py').read())
 
