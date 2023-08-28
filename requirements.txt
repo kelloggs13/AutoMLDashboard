@@ -1,4 +1,4 @@
 scikit-learn
 datetime 
-matplotlib.pyplot 
+matplotlib
 pickle
