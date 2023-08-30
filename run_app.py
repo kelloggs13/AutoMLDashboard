@@ -4,6 +4,7 @@
 #   --> https://machinelearningmastery.com/practice-machine-learning-with-small-in-memory-datasets-from-the-uci-machine-learning-repository/
 #   --> http://archive.ics.uci.edu/
 # - sidebar. gude user by numbered steps
+# tbc: F1 = accuracy??
 
 import os
 import streamlit as st
