@@ -98,7 +98,7 @@ def fit_and_describe(mod):
   st.write("Metrics")
   st.write(df_metrics)
 
-  st.write("Confusion Matrix")
+  st.write("Confusion Matrix Test Data")
   st.write(confusion_matrix(y_test, y_test_pred))
 
   importances = mod.feature_importances_
@@ -108,7 +108,7 @@ def fit_and_describe(mod):
   fig = plt.figure(figsize=(12, 12))
   plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center')
   plt.yticks(range(len(sorted_idx)), np.array(X_test.columns)[sorted_idx])
-  st.write("Feature Importance")
+  st.write("Feature Importance Test Data")
   st.pyplot(fig)
   
   # Download button
