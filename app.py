@@ -22,7 +22,7 @@ if input_data is not None:
     first_column = df_input.pop('target')
     df_input.insert(0, 'target', first_column)
     
-    st.header("Inputs", divider = "red")
+    st.header("Data", divider = "red")
 
     col_data_1, col_data_2 = st.columns([1, 5])
     
@@ -32,21 +32,22 @@ if input_data is not None:
   
     with col_data_2:
       st.subheader("Uploaded Data")
-      st.dataframe(df_input, hide_index = False)
-
-
+      st.dataframe(df_input, hide_index = False, height = 150)
+    
     X = df_input.drop("target", axis=1).copy()
     y = df_input["target"].copy() 
 
     # pre-process
-    print(X.head())
     X = preprocess_features(X)
-    print(X.head())
+
+    st.subheader("Pre-Processed Features")
+    st.dataframe(X, hide_index = False, height = 150)
 
     # Split data into train and test
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)
 
     # evaluate and explain models    
+    st.header("Models", divider = "red")
     col_fm_1, col_fm_2, col_fm_3 = st.columns([1, 1, 1])
     with col_fm_1:
       fit_and_describe(RandomForestClassifier())

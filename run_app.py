@@ -1,6 +1,8 @@
 # add readme
 
 # - blog article (utility, learnigns, comparision with kaggle-daatsets and -scores, test-datasets)
+#   --> https://machinelearningmastery.com/practice-machine-learning-with-small-in-memory-datasets-from-the-uci-machine-learning-repository/
+#   --> http://archive.ics.uci.edu/
 # - sidebar. gude user by numbered steps
 
 import os

@@ -1,4 +1,5 @@
 
+@st.cache_data
 def read_data(file):
   input_filename, input_file_extension = os.path.splitext(file.name)
   if input_file_extension == ".csv":
@@ -78,7 +79,7 @@ def preprocess_features(data, onehot_encode_threshold=2):
 
 def fit_and_describe(mod):
   mod_name = str(mod).replace("Classifier()", "")
-  st.header(mod_name, divider = "red")
+  st.subheader(mod_name)
   mod.fit(X_train, y_train)
   y_train_pred = mod.predict(X_train)
   y_test_pred = mod.predict(X_test)
@@ -94,10 +95,10 @@ def fit_and_describe(mod):
    ,'F1':[f1_train, f1_test]
   })
 
-  st.subheader("Metrics")
+  st.write("Metrics")
   st.write(df_metrics)
 
-  st.subheader("Confusion Matrix")
+  st.write("Confusion Matrix")
   st.write(confusion_matrix(y_test, y_test_pred))
 
   importances = mod.feature_importances_
@@ -107,7 +108,7 @@ def fit_and_describe(mod):
   fig = plt.figure(figsize=(12, 12))
   plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center')
   plt.yticks(range(len(sorted_idx)), np.array(X_test.columns)[sorted_idx])
-  st.subheader("Feature Importance")
+  st.write("Feature Importance")
   st.pyplot(fig)
   
   # Download button
