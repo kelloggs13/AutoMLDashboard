@@ -21,7 +21,9 @@ def preprocess_features(data, onehot_encode_threshold=2):
 
     Returns:
         pd.DataFrame: Preprocessed DataFrame.
-
+        dict: Label encoders for categorical columns.
+        dict: One-hot encoders for high cardinality columns.
+        
     Example Usage:
       data = pd.DataFrame({
           'Age': [25, 30, 35, None, 40],

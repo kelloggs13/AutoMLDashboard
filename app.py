@@ -56,5 +56,3 @@ if input_data is not None:
       fit_and_describe(AdaBoostClassifier())
   
   
-
-      
