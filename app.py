@@ -1,56 +1,4 @@
 
-# final toolset:
-# - preprocessing funcitons
-# - dashboard without prepcorcesing that can classif/regregssion and #
-# - supports multicalss classifaction
-
-# todo:
-# - strings one-hot encoden => heisst auch dass strings bei welchen label encoding besser wäre( weil es eine
-# reihenfolge gibt) bereits or dem dashboard als integer definiert sein müssen.
-
-# clean up imports
-# clean up / remove preproc
-# add readme
-
-# preprocessign muss
-# - bei test und train gleich erfolgen
-# - aich beim predicten erfolgen, gemäss dem selben vrogehen wie biem trainieren des modells
-# --> beides im dashboard (??)
-
-
-# future topics
-# - onehotencoding
-# - readme (intro?) page
-# -- how to use, prerequisites, limitations[comma separated, binary classification], outlook
-# - blog article (utility, learnigns, comparision with kaggle-daatsets and -scores, test-datasets)
-# - sidebar. gude user by numbered steps
-# - targets in upload file shoudl be 1(pos case) or 0 fpr neg case
-# - confusion matrix 
-#   -> add explanation of 0, 1 --> mabye to at beginning anywayxss? 
-#   -> readability!!!
-# - foramt change in eval-kpi as percent
-# dump (and test-read) model as pickle: https://machinelearningmastery.com/save-load-machine-learning-models-python-scikit-learn/
-# https://discuss.streamlit.io/t/download-pickle-file-of-trained-model-using-st-download-button/27395
-# limit targetvariables in selctor to "objects"  // things with 2 distinct values and no missing values
-
-import os
-import streamlit as st
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
-from sklearn.preprocessing import OrdinalEncoder, TargetEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.metrics import accuracy_score, f1_score
-from sklearn import preprocessing
-from datetime import datetime
-import matplotlib.pyplot as plt
-import pickle
-
-exec(open('functions.py').read())
-
 st.set_page_config(layout = "wide")
 
 st.sidebar.subheader("Inputs")
@@ -86,8 +34,14 @@ if input_data is not None:
       st.subheader("Uploaded Data")
       st.dataframe(df_input, hide_index = False)
 
+
+    X = df_input.drop("target", axis=1).copy()
+    y = df_input["target"].copy() 
+
     # pre-process
-    X, y = preprocess_data_classif(df_input)
+    print(X.head())
+    X = preprocess_features(X)
+    print(X.head())
 
     # Split data into train and test
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=.7, random_state=25)

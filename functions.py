@@ -9,23 +9,71 @@ def read_data(file):
     st.warning("Uploaded file must be either .csv or .xlsx")
   return df
 
-def preprocess_data_classif(df):
-  # split X, y   
-  X = df.drop("target", axis=1).copy()
-  y = df["target"].copy() 
-  # encode  character model features
-  vars_categorical = X.select_dtypes(include="O").columns.to_list()
-  vars_remainder = X.select_dtypes(exclude="O").columns.to_list()
-  ct = ColumnTransformer([("encoder", OrdinalEncoder(), vars_categorical)], remainder="passthrough",)
-  ct.fit(X)
-  X = ct.transform(X)
-  X = pd.DataFrame(X, columns=vars_categorical+vars_remainder)
-  # encode target as binary
-  # lb = preprocessing.LabelBinarizer()
-  # y = lb.fit_transform(y)
-  return X, y
 
-        
+def preprocess_features(data, onehot_encode_threshold=2):
+    """
+    Preprocesses a DataFrame with model features by imputing missing values, encoding categorical columns,
+    and standardizing numerical columns.
+
+    Args:
+        data (pd.DataFrame): Input DataFrame with mixed numerical and categorical features.
+        onehot_encode_threshold (int, optional): Threshold for one-hot encoding. Default is 2.
+
+    Returns:
+        pd.DataFrame: Preprocessed DataFrame.
+
+    Example Usage:
+      data = pd.DataFrame({
+          'Age': [25, 30, 35, None, 40],
+          'Gender': ['Male', 'Female', 'Male', 'Other', 'Male'],
+          'Income': [50000, 60000, 75000, 80000, 90000],
+          'Level': ["A1", "A2", "A1", "A1", "A2"]
+      })
+      
+      preprocessed_data = preprocess_data(data
+      
+      print(data)
+      print(preprocessed_data)
+    """
+    
+    imputer = SimpleImputer(strategy='mean') 
+    scaler = StandardScaler() 
+
+    label_encoders = {}
+    onehot_encoders = {}
+
+    categorical_cols = data.select_dtypes(include=['object']).columns.tolist()
+    numerical_cols = data.select_dtypes(include=['int', 'float']).columns.tolist()
+
+    # Impute missing values with the mean for numerical columns
+    data[numerical_cols] = imputer.fit_transform(data[numerical_cols])
+
+    numerical_cols = [col for col in numerical_cols if col not in categorical_cols]
+
+    for col in categorical_cols:
+        # Check if one-hot encoding is needed based on unique values
+        if data[col].nunique() > onehot_encode_threshold:
+            # Create a one-hot encoder
+            encoder = OneHotEncoder(sparse_output=False, drop='first')
+            encoded_features = encoder.fit_transform(data[[col]])
+            column_names = [f"{col}_{val}" for val in encoder.categories_[0][1:]]
+            encoded_df = pd.DataFrame(encoded_features, columns=column_names)
+            data = pd.concat([data, encoded_df], axis=1)
+
+            # Drop the original categorical column
+            data.drop(col, axis=1, inplace=True)
+            
+        # Create a label encoder for low cardinality categorical columns    
+        else: 
+            le = LabelEncoder()
+            data[col] = le.fit_transform(data[col])
+
+    # Standardize the remaining numerical columns using the scaler
+    data[numerical_cols] = scaler.fit_transform(data[numerical_cols])
+
+    return data
+
+
 def fit_and_describe(mod):
   mod_name = str(mod).replace("Classifier()", "")
   st.header(mod_name, divider = "red")
