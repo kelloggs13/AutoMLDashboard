@@ -22,6 +22,7 @@ from sklearn import preprocessing
 from datetime import datetime
 import matplotlib.pyplot as plt
 import pickle
+from sklearn.metrics import roc_curve, auc
 
 
 exec(open('functions.py').read())
