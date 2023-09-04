@@ -1,7 +1,7 @@
 
 st.set_page_config(layout = "wide")
 
-st.sidebar.subheader("Inputs") ##
+st.sidebar.subheader("Inputs") 
 
 input_data = st.sidebar.file_uploader('Upload Data File (CSV or XLSX)')
 

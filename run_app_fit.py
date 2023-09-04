@@ -26,4 +26,4 @@ from sklearn.metrics import roc_curve, auc
 
 
 exec(open('functions.py').read())
-exec(open('app.py').read())
+exec(open('app_fit.py').read())
